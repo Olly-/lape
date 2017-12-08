@@ -31,6 +31,7 @@ type
     function getSize: SizeInt; override;
   public
     FreeFieldMap: Boolean;
+    isClass: Boolean;
 
     constructor Create(ACompiler: TLapeCompilerBase; AFieldMap: TRecordFieldMap; AName: lpString = ''; ADocPos: PDocPos = nil); reintroduce; virtual;
     function CreateCopy(DeepCopy: Boolean = False): TLapeType; override;
@@ -239,6 +240,7 @@ begin
     FInit := Self.FInit;
     FSize := Self.FSize;
     FAlignment := Self.FAlignment;
+    isClass := Self.isClass;
   end;
 end;
 

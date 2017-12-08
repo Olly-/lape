@@ -30,6 +30,7 @@ type
     tk_kw_Array,
     tk_kw_Begin,
     tk_kw_Case,
+    tk_kw_Class,
     tk_kw_Const,
     tk_kw_ConstRef,
     tk_kw_Deprecated,
@@ -250,7 +251,7 @@ const
   ParserToken_Symbols = [tk_sym_BracketClose..tk_sym_SemiColon];
   ParserToken_Types = [tk_typ_Float..tk_typ_Char];
 
-  Lape_Keywords: array[0..52 {$IFDEF Lape_PascalLabels}+1{$ENDIF}] of TLapeKeyword = (
+  Lape_Keywords: array[0..53 {$IFDEF Lape_PascalLabels}+1{$ENDIF}] of TLapeKeyword = (
       (Keyword: 'AND';           Token: tk_op_AND),
       (Keyword: 'DIV';           Token: tk_op_DIV),
       (Keyword: 'IN';            Token: tk_op_IN),
@@ -265,6 +266,7 @@ const
       (Keyword: 'ARRAY';         Token: tk_kw_Array),
       (Keyword: 'BEGIN';         Token: tk_kw_Begin),
       (Keyword: 'CASE';          Token: tk_kw_Case),
+      (Keyword: 'CLASS';         Token: tk_kw_Class),
       (Keyword: 'CONST';         Token: tk_kw_Const),
       (Keyword: 'CONSTREF';      Token: tk_kw_ConstRef),
       (Keyword: 'DEPRECATED';    Token: tk_kw_Deprecated),
@@ -764,7 +766,7 @@ function TLapeTokenizerBase.Identify: EParserToken;
 var
   Char: lpChar;
   tmpDocPos:TDocPos;
-  
+
   procedure NextPos_CountLines;
   begin
     repeat
@@ -862,11 +864,11 @@ begin
         else
           Result := setTok(tk_sym_Colon);
       end;
-    
+
     {Divide, Comment, AssignDiv}
     '/':
       case getChar(1) of
-        '/': 
+        '/':
           begin
             Inc(FPos);
             while (not (getChar(1) in [#13, #10, #0])) do Inc(FPos);
@@ -880,16 +882,16 @@ begin
         else
           Result := setTok(tk_op_Divide);
       end;
-          
- 
-    {Minus, AssignMinus} 
+
+
+    {Minus, AssignMinus}
     '-':if (getChar(1) = '=') then begin
           Result := setTok(tk_op_AssignMinus);
           Inc(FPos);
-        end else 
+        end else
           Result := setTok(tk_op_Minus);
-    
-    {Multiply, Power, AssignMul}      
+
+    {Multiply, Power, AssignMul}
     '*':
       case getChar(1) of
         '*':
@@ -897,7 +899,7 @@ begin
             Inc(FPos);
             Result := setTok(tk_op_Power);
           end;
-        '=': 
+        '=':
           begin
             Result := setTok(tk_op_AssignMul);
             Inc(FPos);
@@ -905,15 +907,15 @@ begin
         else
           Result := setTok(tk_op_Multiply);
       end;
-      
-    
+
+
     {Plus, AssignPlus}
     '+':if (getChar(1) = '=') then begin
           Result := setTok(tk_op_AssignPlus);
           Inc(FPos);
-        end else 
+        end else
           Result := setTok(tk_op_Plus);
-    
+
     '@': Result := setTok(tk_op_Addr);
     '^': Result := setTok(tk_sym_Caret);
 
@@ -1454,4 +1456,5 @@ initialization
 finalization
   Lape_ClearKeywordsCache();
 end.
+
 

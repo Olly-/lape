@@ -269,7 +269,7 @@ implementation
 uses
   Variants,
   {$IFDEF Lape_NeedAnsiStringsUnit}AnsiStrings,{$ENDIF}
-  lpvartypes_ord, lpvartypes_record, lpvartypes_array,
+  lpvartypes_ord, lpvartypes_record, lpvartypes_array, lpvartypes_class,
   lpmessages, lpeval, lpinterpreter;
 
 function TLapeCompiler.getPDocPos: PDocPos;
@@ -1904,13 +1904,13 @@ function TLapeCompiler.ParseType(TypeForwards: TLapeTypeForwards; addToStackOwne
   procedure ParseRecord(IsPacked: Boolean = False);
   var
     i: Integer;
-    IsRecord: Boolean;
+    IsRecord, IsClass: Boolean;
     Rec: TLapeType_Record absolute Result;
     FieldType: TLapeType;
     Identifiers: TStringArray;
   begin
-    IsRecord := Tokenizer.Tok = tk_kw_Record;
-
+    IsRecord := Tokenizer.Tok in [tk_kw_Record, tk_kw_Class];
+    IsClass := Tokenizer.Tok = tk_kw_Class;
     Next();
     if (Tokenizer.Tok = tk_sym_ParenthesisOpen) then
     begin
@@ -1926,6 +1926,7 @@ function TLapeCompiler.ParseType(TypeForwards: TLapeTypeForwards; addToStackOwne
     else
       Rec := TLapeType_Union.Create(Self, nil, '', getPDocPos());
 
+    Rec.isClass := IsClass;
     repeat
       Identifiers := ParseIdentifierList();
       Expect(tk_sym_Colon, False, False);
@@ -2163,7 +2164,7 @@ begin
 
     case Next() of
       tk_kw_Array: ParseArray();
-      tk_kw_Record, tk_kw_Union: ParseRecord();
+      tk_kw_Record, tk_kw_Union, tk_kw_Class: ParseRecord();
       tk_kw_Set: ParseSet();
       tk_kw_Packed:
         begin
@@ -2211,6 +2212,16 @@ begin
       addLocalDecl(Typ);
 
       ParseExpressionEnd(tk_sym_SemiColon, True, False);
+
+      if (Typ is TLapeType_Record) and TLapeType_Record(Typ).isClass then
+      begin
+        Typ.Name := '!' + Name;
+        addLocalDecl(TLapeType_Class.Create(Self, Typ, False, Name, getPDocPos));
+
+        // TODO: the proper way.
+        addDelayedCode('function ' + Name + '.Create: ' + Name + '; static; begin Result := AllocMem(' + IntToStr(Typ.Size) + '); end;');
+        addDelayedCode('procedure ' + Name + '.Free; begin FreeMem(Self); end;');
+      end;
     until (Next() <> tk_Identifier);
 
     while (TypeForwards.Count > 0) do

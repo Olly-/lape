@@ -11,7 +11,7 @@ uses
 
   lpparser, lpcompiler, lptypes, lpeval, lpinterpreter, lpmessages,
   lpvartypes, lpcodeemitter, lptree, lpdisassembler, lpvartypes_array, 
-  lpvartypes_ord, lpvartypes_record, lputils, lpffi, ffi;
+  lpvartypes_ord, lpvartypes_record, lpvartypes_map, lputils, lpffi, ffi;
 
 {$R *.res}
 

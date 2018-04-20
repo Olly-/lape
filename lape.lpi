@@ -162,7 +162,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="58">
+    <Units Count="59">
       <Unit0>
         <Filename Value="lape.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -399,6 +399,10 @@
         <Filename Value="lpmessages.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit57>
+      <Unit58>
+        <Filename Value="lpvartypes_map.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit58>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -410,7 +414,7 @@
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <Libraries Value="extensions\ffi\bin\$(TargetOS)"/>
-      <OtherUnitFiles Value="extensions\ffi"/>
+      <OtherUnitFiles Value="extensions\ffi;extensions\map"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

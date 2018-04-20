@@ -1,0 +1,12 @@
+var
+  m: Map(String, Int32);
+  v: Int32;
+begin
+  m.init(10);
+  m.Add('Hash this and that and this', 1);
+  m.Add('Hash this too', 123);
+
+  writeLn(m.Get('Hash this too', v));
+  writeLn(v);
+  writeLn(m);
+end; 

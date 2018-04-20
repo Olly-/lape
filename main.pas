@@ -39,7 +39,7 @@ implementation
 
 uses
   lpparser, lpcompiler, lputils, lpeval, lpinterpreter, lpdisassembler, {_lpgenerateevalfunctions,}
-  LCLIntf, typinfo, ffi, lpffi, lpffiwrappers;
+  LCLIntf, typinfo, ffi, lpffi, lpffiwrappers, lpvartypes_map;
 
 {$R *.lfm}
 
@@ -105,6 +105,7 @@ begin
 
       InitializeFFI(Compiler);
       InitializePascalScriptBasics(Compiler, [psiTypeAlias]);
+      InitializeMapType(Compiler);
       ExposeGlobals(Compiler);
 
       Compiler.StartImporting();

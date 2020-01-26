@@ -63,6 +63,7 @@ const
   lpeIncompatibleOperator = 'Operator "%s" is not supported for type';
   lpeIncompatibleOperator1 = 'Operator "%s" not compatible with "%s"';
   lpeIncompatibleOperator2 = 'Operator "%s" not compatible with types "%s" and "%s"';
+  lpeIncompatibleTypes = 'Type "%s" not compatible with "%s"';
   lpeInvalidAssignment = 'Invalid assignment';
   lpeInvalidCast = 'Invalid cast';
   lpeInvalidCondition = 'Invalid condition';

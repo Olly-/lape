@@ -669,6 +669,22 @@ type
     property ElseBody: TLapeTree_Base read FElse write setElse;
   end;
 
+  TLapeTree_ShortHandIf = class(TLapeTree_ExprBase)
+  protected
+    FLeft: TLapeTree_ExprBase;
+    FRight: TLapeTree_ExprBase;
+    FCondition: TLapeTree_ExprBase;
+  public
+    property Condition: TLapeTree_ExprBase read FCondition write FCondition;
+    property Left: TLapeTree_ExprBase read FLeft write FLeft;
+    property Right: TLapeTree_ExprBase read FRight write FRight;
+
+    function setExpectedType(ExpectType: TLapeType): TLapeTree_Base; override;
+    function resType: TLapeType; override;
+
+    function Compile(var Offset: Integer): TResVar; overload; override;
+  end;
+
   TLapeTree_MultiIf = class(TLapeTree_If)
   protected
     FValues: TLapeStatementList;
@@ -5738,6 +5754,61 @@ begin
   end;
 
   ConditionVar.Spill(1);
+end;
+
+function TLapeTree_ShortHandIf.setExpectedType(ExpectType: TLapeType): TLapeTree_Base;
+begin
+  FResType := ExpectType; // assignment done in Compile() will verify this later on
+
+  Result := inherited;
+end;
+
+function TLapeTree_ShortHandIf.resType: TLapeType;
+begin
+  if FResType = nil then
+  begin
+    if (FLeft = nil) or (FRight = nil) then
+      LapeException(lpeImpossible, Self.DocPos);
+    if (FLeft.resType() = nil) or (FRight.resType() = nil) then
+      LapeException(lpeTypeExpected);
+
+    if FLeft.resType.CompatibleWith(FRight.resType()) then
+      FResType := FLeft.resType
+    else
+    if FRight.resType.CompatibleWith(FLeft.resType()) then
+      FResType := FRight.resType;
+  end;
+
+  Result := inherited;
+end;
+
+function TLapeTree_ShortHandIf.Compile(var Offset: Integer): TResVar;
+var
+  Statement: TLapeTree_If;
+begin
+  if (resType = nil) then
+    LapeExceptionFmt(lpeIncompatibleTypes, [FLeft.resType.AsString, FRight.resType.AsString]);
+
+  Result := _ResVar.New(FCompiler.getTempVar(resType()));
+  Result.Writeable := True;
+
+  Statement := TLapeTree_If.Create(Self);
+
+  try
+    Statement.Condition := FCondition;
+    Statement.Body := TLapeTree_Operator.Create(op_Assign, FCompiler);
+    Statement.ElseBody := TLapeTree_Operator.Create(op_Assign, FCompiler);
+
+    TLapeTree_Operator(Statement.Body).Left := TLapeTree_ResVar.Create(Result.IncLock(), FCompiler);
+    TLapeTree_Operator(Statement.Body).Right := FLeft;
+
+    TLapeTree_Operator(Statement.ElseBody).Left := TLapeTree_ResVar.Create(Result.IncLock(), FCompiler);
+    TLapeTree_Operator(Statement.ElseBody).Right := FRight;
+
+    Statement.Compile(Offset).Spill(1);
+  finally
+    Statement.Free();
+  end;
 end;
 
 procedure TLapeTree_MultiIf.DeleteChild(Node: TLapeTree_Base);

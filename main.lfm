@@ -1,17 +1,17 @@
 object Form1: TForm1
-  Left = 626
-  Height = 692
-  Top = 128
-  Width = 497
+  Left = 63
+  Height = 689
+  Top = 627
+  Width = 656
   Caption = 'Form1'
-  ClientHeight = 692
-  ClientWidth = 497
-  LCLVersion = '1.6.0.4'
+  ClientHeight = 689
+  ClientWidth = 656
+  LCLVersion = '2.0.6.0'
   inline e: TSynEdit
     Left = 0
-    Height = 531
+    Height = 528
     Top = 42
-    Width = 497
+    Width = 656
     Align = alClient
     Font.CharSet = ANSI_CHARSET
     Font.Height = -13
@@ -536,34 +536,18 @@ object Form1: TForm1
       end>
     Lines.Strings = (
       'type'
-      '  TPoint = record'
-      '    x, y: Integer;'
-      '  end;'
-      '  TPointArray = array of TPoint;'
-      ''
-      'procedure test(a: ^Integer);'
-      'begin'
-      '  WriteLn(a);'
-      'end;'
-      ''
-      'procedure test(a: ^Integer); override;'
-      'begin'
-      '  Write(''Dumping: '');'
-      '  inherited;'
-      'end;'
+      '  TPoint = record X, Y: Int32; end;'
       ''
       'var'
-      '  tpa: TPointArray = [[1, 2], [3, 4]];'
-      '  i = 1;'
+      '  P: TPoint;'
       'begin'
-      '  WriteLn(''tpa: '', tpa + tpa[0]);'
+      '  WriteLn(if True then 100 else 200);'
+      '  WriteLn(if False then 100 else 200);'
       ''
-      '  for i to Random(0, 2) do'
-      '    WriteLn(''hoi '', i)'
-      '  else'
-      '    WriteLn(''no hoi'');'
-      ''
-      '  test(@tpa[1].y);'
+      '  P := if P = [] then [100, 100] else [200, 200];'
+      '  WriteLn P;'
+      '  P := if P = [] then [100, 100] else [200, 200];'
+      '  WriteLN P;'
       'end;'
     )
     VisibleSpecialChars = [vscSpace, vscTabAtLast]
@@ -668,8 +652,8 @@ object Form1: TForm1
   object m: TMemo
     Left = 0
     Height = 114
-    Top = 578
-    Width = 497
+    Top = 575
+    Width = 656
     Align = alBottom
     ScrollBars = ssAutoBoth
     TabOrder = 2
@@ -678,8 +662,8 @@ object Form1: TForm1
     Cursor = crVSplit
     Left = 0
     Height = 5
-    Top = 573
-    Width = 497
+    Top = 570
+    Width = 656
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -687,13 +671,13 @@ object Form1: TForm1
     Left = 0
     Height = 42
     Top = 0
-    Width = 497
+    Width = 656
     Align = alTop
     ClientHeight = 42
-    ClientWidth = 497
+    ClientWidth = 656
     TabOrder = 0
     object btnEvalRes: TButton
-      Left = 331
+      Left = 490
       Height = 25
       Top = 8
       Width = 75
@@ -703,7 +687,7 @@ object Form1: TForm1
       TabOrder = 3
     end
     object btnEvalArr: TButton
-      Left = 411
+      Left = 570
       Height = 25
       Top = 8
       Width = 75
@@ -713,7 +697,7 @@ object Form1: TForm1
       TabOrder = 4
     end
     object btnMemLeaks: TButton
-      Left = 251
+      Left = 410
       Height = 25
       Top = 8
       Width = 75

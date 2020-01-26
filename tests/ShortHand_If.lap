@@ -1,0 +1,22 @@
+{$assertions on}
+
+type
+  TPoint = record X, Y: Int32; end;
+
+var
+  P: TPoint;
+  E: Extended;
+begin
+  WriteLn(if True then 100 else 200);
+  WriteLn(if False then 100 else 200);
+
+  P := if P = [] then [100, 100] else [200, 200];
+  Assert(P = [100, 100]);
+  P := if P = [] then [100, 100] else [200, 200];
+  Assert(P = [200, 200]);
+
+  E := if True then 1.337 else 9000; // Assigning to a Integer isn't allowed.
+  Assert(E = 1.337);
+  E := if False then 1.337 else 9000;
+  Assert(E = 9000);
+end;

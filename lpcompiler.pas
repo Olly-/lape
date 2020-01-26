@@ -2656,9 +2656,11 @@ var
   function ParseShorthandIf: TLapeTree_ShorthandIf;
   begin
     Result := TLapeTree_ShortHandIf.Create(Self, getPDocPos());
-    Result.Condition := ParseExpression([tk_kw_Then{, tk_sym_Colon}]);
-    Result.Left := ParseExpression([tk_kw_Else{, tk_sym_Question}]);
-    Result.Right := ParseExpression(ReturnOn);
+    Result.Left := VarStack.Pop;
+    _LastNode := _None;
+    Result.Condition := ParseExpression([tk_kw_Else{, tk_sym_Colon}]);
+    //Result.Left := ParseExpression([tk_kw_Else{, tk_sym_Question}]);
+    Result.Right := ParseExpression(ReturnOn);;
   end;
 
 begin

@@ -427,6 +427,7 @@ type
 
     constructor Create(ACompiler: TLapeCompilerBase; AObjType: TLapeType; AParams: TLapeParameterList; ARes: TLapeType = nil; AName: lpString = ''; ADocPos: PDocPos = nil); reintroduce; overload; virtual;
     constructor Create(AMethod: TLapeType_Method; AObjType: TLapeType); overload; virtual;
+    constructor Create(ACompiler: TLapeCompilerBase; AObjType: TLapeType; AParams: array of TLapeType; AParTypes: array of ELapeParameterType; ARes: TLapeType = nil); overload; virtual;
     function CreateCopy(DeepCopy: Boolean = False): TLapeType; override;
 
     function Equals(Other: TLapeType; ContextOnly: Boolean = True): Boolean; override;
@@ -2861,6 +2862,22 @@ begin
   Assert(AObjType <> nil);
   inherited Create(AMethod);
   FObjectType := AObjType;
+end;
+
+constructor TLapeType_MethodOfType.Create(ACompiler: TLapeCompilerBase; AObjType: TLapeType; AParams: array of TLapeType; AParTypes: array of ELapeParameterType; ARes: TLapeType);
+var
+  i: Int32;
+  Param: TLapeParameter;
+begin
+  Create(ACompiler, AObjType, nil, ARes);
+
+  for i := 0 to High(AParams) do
+  begin
+    Param.ParType := AParTypes[i];
+    Param.VarType := AParams[i];
+
+    FParams.Add(Param);
+  end;
 end;
 
 function TLapeType_MethodOfType.CreateCopy(DeepCopy: Boolean = False): TLapeType;

@@ -1,0 +1,20 @@
+type
+  TPoint = record X, Y: Int32; end;  
+  TPointMap = StringMap<TPoint>;
+
+var
+  Points: TPointMap;
+  Integers: StringMap<Int32>;
+
+  i: Int32;
+  p: TPoint;
+begin
+  SetLength(Points, 512);
+  SetLength(Integers, 512);
+
+  Integers.Add('One', 1);
+  WriteLn Integers.Get('One');
+
+  Points.Add('100,100', [100, 100]);
+  WriteLn Points.Get('100,100');;
+end.

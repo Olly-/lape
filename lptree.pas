@@ -186,6 +186,7 @@ type
   protected
     FForceParam: Boolean;
   public
+    IsGeneric: Boolean;
     constructor Create(ACompiler: TLapeCompilerBase; ADocPos: PDocPos = nil); override;
     procedure ClearCache; override;
     property ForceParam: Boolean read FForceParam;

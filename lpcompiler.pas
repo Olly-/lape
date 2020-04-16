@@ -273,7 +273,7 @@ implementation
 uses
   Variants,
   {$IFDEF Lape_NeedAnsiStringsUnit}AnsiStrings,{$ENDIF}
-  lpvartypes_ord, lpvartypes_record, lpvartypes_array,
+  lpvartypes_ord, lpvartypes_record, lpvartypes_array, lpvartypes_map,
   lpmessages, lpeval, lpinterpreter;
 
 function TLapeCompiler.getPDocPos: PDocPos;
@@ -685,7 +685,6 @@ begin
 
   addCompilerFuncs();
   addGlobalVar(addManagedType(TLapeType_SystemUnit.Create(Self)).NewGlobalVarP(nil), 'System').isConstant := True;
-
   addGlobalType(TLapeType_Label.Create(Self), '!label');
   addGlobalType(TLapeType_Pointer.Create(Self, nil, True), 'ConstPointer');
   addGlobalType(getBaseType(ltString).createCopy(), 'string');
@@ -745,6 +744,8 @@ begin
   addGlobalFunc('procedure UniqueString(var Str: WideString); overload;', @_LapeWStr_Unique);
   addGlobalFunc('procedure UniqueString(var Str: UnicodeString); overload;', @_LapeUStr_Unique);
 
+  addGlobalFunc('function Hash(constref Str: String): UInt32;', @_LapeHash);
+
   addToString();
   addGlobalVar(NewMagicMethod({$IFDEF FPC}@{$ENDIF}GetDisposeMethod).NewGlobalVar('_Dispose'));
   addGlobalVar(NewMagicMethod({$IFDEF FPC}@{$ENDIF}GetCopyMethod).NewGlobalVar('_Assign'));
@@ -765,7 +766,8 @@ begin
     _LapeSetLength +
     _LapeCopy +
     _LapeDelete +
-    _LapeInsert,
+    _LapeInsert +
+    _LapeStringMap,
     '!addDelayedCore'
   );
 
@@ -2698,6 +2700,18 @@ begin
                 _LastNode := _Var
               else
               begin
+                if (Method is TLapeTree_InternalMethod) and (TLapeTree_InternalMethod(Method).IsGeneric) then
+                begin
+                  Expect(tk_cmp_LessThan, False, True);
+
+                  Expr := getExpression(Tokenizer.TokString);
+                  if (not (Expr is TLapeTree_VarType)) then
+                    LapeException(lpeTypeExpected, getDocPos());
+
+                  Method.addParam(Expr);
+
+                  Expect(tk_cmp_GreaterThan, True, True);
+                end else
                 if (Method is TLapeTree_InternalMethod) and (TLapeTree_InternalMethod(Method).ForceParam and (not (Tokenizer.Tok in ReturnOn))) then
                   Method.addParam(EnsureExpression(ParseExpression(ReturnOn, False)));
 
@@ -3239,6 +3253,8 @@ begin
   FInternalMethodMap['goto'] := TLapeTree_InternalMethod_GoTo;
 
   FInternalMethodMap['raise'] := TLapeTree_InternalMethod_Raise;
+
+  FInternalMethodMap['StringMap'] := TLapeTree_InternalMethod_StringMap;
 
   setTokenizer(ATokenizer);
   Reset();

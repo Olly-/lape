@@ -44,6 +44,8 @@ procedure _LapeCompareMem(const Params: PParamArray; const Result: Pointer); {$I
 procedure _LapeHigh(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
 procedure _LapeLength(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
 
+procedure _LapeHash(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+
 procedure _LapeAStr_GetLen(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
 procedure _LapeWStr_GetLen(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
 procedure _LapeUStr_GetLen(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
@@ -392,6 +394,70 @@ var
     '  _ArraySetLength(Dst, LenDst + LenSrc - Count, ElSize, nil, nil);'                 + LineEnding +
     'end;';
 
+  // Todo use copy like above
+  _LapeStringMap: lpString =
+    'procedure _StringMap_Add(Self: Pointer; Key: String; constref Value; ValueSize: Int32);'   + LineEnding +
+    'type'                                                                                      + LineEnding +
+    '  TArray = array of Pointer;'                                                              + LineEnding +
+    '  TEntry = packed record Key: String; Value: UInt8; end;'                                  + LineEnding +
+    'var'                                                                                       + LineEnding +
+    '  l, i: Int32;'                                                                            + LineEnding +
+    '  EntrySize: Int32;'                                                                       + LineEnding +
+    '  Entry: ^TEntry;'                                                                         + LineEnding +
+    '  Bucket, Table: ^TArray;'                                                                 + LineEnding +
+    'begin'                                                                                     + LineEnding +
+    '  EntrySize := SizeOf(String) + ValueSize;'                                                + LineEnding +
+    ''                                                                                          + LineEnding +
+    '  Pointer(Table) := Self;'                                                                 + LineEnding +
+    '  Pointer(Bucket) := @Table^[Hash(Key) and High(Table^)];'                                 + LineEnding +
+    ''                                                                                          + LineEnding +
+    '  l := Length(Bucket^);'                                                                   + LineEnding +
+    '  for i := 0 to l - 1 do'                                                                  + LineEnding +
+    '  begin  '                                                                                 + LineEnding +
+    '    Entry := Pointer(Pointer(Bucket^) + (i * EntrySize));'                                 + LineEnding +
+    '    if Entry^.Key = Key then'                                                              + LineEnding +
+    '      Break; '                                                                             + LineEnding +
+    '  end;'                                                                                    + LineEnding +
+    ''                                                                                          + LineEnding +
+    '  if (i = l) then'                                                                         + LineEnding +
+    '  begin'                                                                                   + LineEnding +
+    '    _ArraySetLength(Pointer(Bucket^), l + 1, EntrySize, nil, nil);'                        + LineEnding +
+    ''                                                                                          + LineEnding +
+    '    Entry := Pointer(Pointer(Bucket^) + (l * EntrySize));'                                 + LineEnding +
+    '    Entry^.Key := Key;'                                                                    + LineEnding +
+    '  end;'                                                                                    + LineEnding +
+    ''                                                                                          + LineEnding +
+    '  Move(Value, Entry^.Value, ValueSize);'                                                   + LineEnding +
+    'end;'                                                                                      + LineEnding +
+    ''                                                                                          + LineEnding +
+    'procedure _StringMap_Get(Self: Pointer; Key: String; var Value; ValueSize: Int32);'        + LineEnding +
+    'type'                                                                                      + LineEnding +
+    '  TArray = array of Pointer;'                                                              + LineEnding +
+    '  TEntry = packed record Key: String; Value: UInt8; end;'                                  + LineEnding +
+    'var'                                                                                       + LineEnding +
+    '  l, i: Int32;'                                                                            + LineEnding +
+    '  EntrySize: Int32;'                                                                       + LineEnding +
+    '  Entry: ^TEntry;'                                                                         + LineEnding +
+    '  Bucket, Table: ^TArray;'                                                                 + LineEnding +
+    'begin'                                                                                     + LineEnding +
+    '  EntrySize := SizeOf(String) + ValueSize;'                                                + LineEnding +
+    ''                                                                                          + LineEnding +
+    '  Pointer(Table) := Self;'                                                                 + LineEnding +
+    '  Pointer(Bucket) := @Table^[Hash(Key) and High(Table^)];'                                 + LineEnding +
+    ''                                                                                          + LineEnding +
+    '  l := Length(Bucket^);'                                                                   + LineEnding +
+    '  for i := 0 to l - 1 do'                                                                  + LineEnding +
+    '  begin  '                                                                                 + LineEnding +
+    '    Entry := Pointer(Pointer(Bucket^) + (i * EntrySize));'                                 + LineEnding +
+    '    if Entry^.Key = Key then'                                                              + LineEnding +
+    '    begin'                                                                                 + LineEnding +
+    '      Move(Entry^.Value, Value, ValueSize);'                                               + LineEnding +
+    '      Exit();'                                                                             + LineEnding +
+    '    end;'                                                                                  + LineEnding +
+    '  end;'                                                                                    + LineEnding +
+    'end;';
+
+
 implementation
 
 uses
@@ -492,6 +558,11 @@ end;
 procedure _LapeLength(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
 begin
   PSizeInt(Result)^ := Length(PCodeArray(Params^[0])^);
+end;
+
+procedure _LapeHash(const Params: PParamArray; const Result: Pointer);
+begin
+  PUInt32(Result)^ := LapeHash(PlpString(Params^[0])^);
 end;
 
 procedure _LapeAStr_GetLen(const Params: PParamArray; const Result: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}

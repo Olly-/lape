@@ -35,6 +35,7 @@ const
   lpeAssertionFailureMsg = 'Assertion failure: %s';
   lpeBlockExpected = 'Block expected';
   lpeCannotAssign = 'Target cannot be assigned to';
+  lpeCannotAssignSelfAuto = '"Self" is a constant and cannot be assigned to since this method been automatically marked as constref';
   lpeCannotBreak = 'Cannot break out of this statement';
   lpeCannotContinue = 'Cannot use continue in this context';
   lpeCannotEvalConst = 'Cannot be evaluated as constant';
@@ -107,6 +108,7 @@ const
   lpeUnknownOC = 'Unknown opcode';
   lpeUnknownParent = 'Cannot find parent declaration';
   lpeVariableExpected = 'Variable expected';
+  lpeVariableExpectedSelfAuto = 'Variable expected but "Self" is a constant since this method been automatically marked as constref.';
   lpeVariableOfTypeExpected = 'Expected variable of type "%s", got "%s"';
   lpeWrongNumberParams = 'Wrong number of parameters found, expected %d';
   lpeScriptMethodExpected = 'Script method expected';

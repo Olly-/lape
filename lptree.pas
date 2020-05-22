@@ -2150,7 +2150,12 @@ begin
          (not (TLapeType_MethodOfType(IdentVar.VarType).SelfParam in Lape_ValParams)) and
          (not IdentVar.Readable)
       then
-        LapeException(lpeVariableExpected, IdentExpr.DocPos);
+      begin
+        if (lcoAutoConstRef in FCompilerOptions) then
+          TLapeType_MethodOfType(IdentVar.VarType).SelfParam := lptConstRef
+        else
+          LapeException(lpeVariableExpected, IdentExpr.DocPos);
+      end;
 
       FRes := DoImportedMethod(IdentVar);
     end;
@@ -2337,7 +2342,12 @@ var
         if (Params[i].ParType in Lape_RefParams) then
         begin
           if (not (Params[i].ParType in Lape_ValParams)) and (not ParamVars[i].Writeable) then
-            LapeException(lpeVariableExpected)
+          begin
+            if (lcoAutoConstRef in FCompilerOptions) and IsSelfVar(ParamVars[I]) then
+              LapeException(lpeVariableExpectedSelfAuto)
+            else
+              LapeException(lpeVariableExpected)
+          end
           else if (Params[i].VarType <> nil) and (not Params[i].VarType.Equals(ParamVars[i].VarType)) then
             AssignToTempVar(ParamVars[i], Params[i], mpVar, Self._DocPos);
           AssignToStack(ParamVars[i], Self._DocPos);
@@ -2390,7 +2400,12 @@ var
         then
           LapeException(lpeCannotInvoke, [FParams[i], Self])
         else if (not (Params[i].ParType in Lape_ValParams)) and (not ParamVars[i].Writeable) then
-          LapeException(lpeVariableExpected, [FParams[i], Self]);
+        begin
+          if (lcoAutoConstRef in FCompilerOptions) and IsSelfVar(ParamVars[I]) then
+            LapeException(lpeVariableExpectedSelfAuto, [FParams[i], Self])
+          else
+            LapeException(lpeVariableExpected, [FParams[i], Self]);
+        end;
 
         if (Params[i].VarType <> nil) and (not Params[i].VarType.Equals(ParamVars[i].VarType)) then
           AssignToTempVar(ParamVars[i], Params[i], mpVar, Self._DocPos);
@@ -2514,7 +2529,12 @@ begin
        (not (TLapeType_MethodOfType(IdentVar.VarType).SelfParam in Lape_ValParams)) and
        (not IdentVar.Readable)
     then
-      LapeException(lpeVariableExpected, IdentExpr.DocPos);
+    begin
+      if (lcoAutoConstRef in FCompilerOptions) then
+        TLapeType_MethodOfType(IdentVar.VarType).SelfParam := lptConstRef
+      else
+        LapeException(lpeVariableExpected, IdentExpr.DocPos);
+    end;
 
     if (lcoInitExternalResult in FCompilerOptions) then
       Dest := NullResVar;
@@ -2548,9 +2568,13 @@ begin
             Params[i].Default.Used := duTrue;
             ParamVars[i] := _ResVar.New(Params[i].Default).InScope(FCompiler.StackInfo, @Self._DocPos);
             if (not (Params[i].ParType in Lape_ValParams)) and (not ParamVars[i].Writeable) then
-              LapeException(lpeVariableExpected, [FParams[i], Self]);
-          end
-          else
+            begin
+              if (lcoAutoConstRef in FCompilerOptions) and IsSelfVar(ParamVars[I]) then
+                LapeException(lpeVariableExpectedSelfAuto, [FParams[i], Self])
+              else
+                LapeException(lpeVariableExpected, [FParams[i], Self]);
+            end
+          end else
             LapeExceptionFmt(lpeNoDefaultForParam, [i + 1 - ImplicitParams], [FParams[i], Self])
         else
         begin
@@ -4881,7 +4905,12 @@ begin
     LeftVar := NullResVar;
 
   if (FOperatorType in AssignOperators) and (not LeftVar.Writeable) then
-    LapeException(lpeCannotAssign, [FLeft, Self]);
+  begin
+    if (lcoAutoConstRef in FCompilerOptions) and IsSelfVar(LeftVar) then
+      LapeException(lpeCannotAssignSelfAuto, [FLeft, Self])
+    else
+      LapeException(lpeCannotAssign, [FLeft, Self]);
+  end;
 
   if (FRight <> nil) then
   begin
@@ -5403,6 +5432,10 @@ begin
   FCompiler.IncStackInfo(FStackInfo, Offset, True, @_DocPos);
   try
     if MethodOfObject(Method.VarType) then
+    begin
+      if Method.VarType is TLapeType_MethodOfType then
+        Self.SelfVar.isConstant := TLapeType_MethodOfType(Method.VarType).SelfParam in Lape_ConstParams;
+
       with TLapeTree_InternalMethod_Assert.Create(Self) do
       try
         addParam(TLapeTree_Operator.Create(op_cmp_NotEqual, Self));
@@ -5419,6 +5452,7 @@ begin
       finally
         Free();
       end;
+    end;
 
     FStatements.Compile(Offset).Spill(1);
 

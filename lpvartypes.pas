@@ -31,6 +31,7 @@ type
     lcoHints,                          // {$H} {$HINTS}
     lcoContinueCase,                   //      {$CONTINUECASE}
     lcoCOperators,                     //      {$COPERATORS}
+    lcoAutoConstRef,                   //      {$AUTOCONSTREF}
     lcoInitExternalResult              // Ensure empty result for external calls (useful for ffi)
   );
   ECompilerOptionsSet = set of ECompilerOption;
@@ -185,6 +186,8 @@ type
     constructor Create(AParType: ELapeParameterType; AVarType: TLapeType; AStack: TLapeVarStack; AName: lpString = ''; ADocPos: PDocPos = nil; AList: TLapeDeclarationList = nil); reintroduce; virtual;
     property ParType: ELapeParameterType read FParType;
   end;
+
+  TLapeSelfVar = class(TLapeParameterVar);
 
   TLapeStackInheritedVar = class(TLapeParameterVar)
   protected
@@ -708,6 +711,7 @@ function getTypeArray(Arr: array of TLapeType): TLapeTypeArray;
 procedure ClearBaseTypes(var Arr: TLapeBaseTypes; DoFree: Boolean);
 procedure LoadBaseTypes(var Arr: TLapeBaseTypes; Compiler: TLapeCompilerBase);
 
+function IsSelfVar(ResVar: TResVar): Boolean; {$IFDEF Lape_Inline}inline;{$ENDIF}
 function MethodOfObject(VarType: TLapeType): Boolean; {$IFDEF Lape_Inline}inline;{$ENDIF}
 function ValidFieldName(Field: TLapeGlobalVar): Boolean; overload; {$IFDEF Lape_Inline}inline;{$ENDIF}
 function ValidFieldName(Field: TResVar): Boolean; overload; {$IFDEF Lape_Inline}inline;{$ENDIF}
@@ -806,6 +810,11 @@ begin
   Arr[ltUnicodeString] := TLapeType_UnicodeString.Create(Compiler, LapeTypeToString(ltUnicodeString));
   Arr[ltVariant] := TLapeType_Variant.Create(Compiler, LapeTypeToString(ltVariant));
   Arr[ltPointer] := TLapeType_Pointer.Create(Compiler, nil, False, LapeTypeToString(ltPointer));
+end;
+
+function IsSelfVar(ResVar: TResVar): Boolean;
+begin
+  Result := (ResVar.VarPos.MemPos = mpVar) and (ResVar.VarPos.StackVar is TLapeSelfVar);
 end;
 
 function MethodOfObject(VarType: TLapeType): Boolean;
@@ -3573,7 +3582,7 @@ end;
 
 function TLapeStackInfo.addSelfVar(ParType: ELapeParameterType; VarType: TLapeType): TLapeStackVar;
 begin
-  Result := addVar(ParType, VarType, 'Self');
+  Result := addVar(TLapeSelfVar.Create(ParType, VarType, nil, 'Self', @VarType._DocPos));
 end;
 
 function TLapeStackInfo.inheritVar(StackVar: TLapeStackVar): TLapeStackVar;

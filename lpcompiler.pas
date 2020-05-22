@@ -921,6 +921,8 @@ var
         Result := (lcoContinueCase in FOptions)
       else if (Def = 'coperators') then
         Result := (lcoCOperators in FOptions)
+      else if (Def = 'autoconstref') then
+        Result := (lcoAutoConstRef in FOptions)
       else if (Def = 'hints') then
         Result := (lcoHints in FOptions)
       else
@@ -1106,6 +1108,8 @@ begin
     setOption(lcoContinueCase)
   else if (Directive = 'coperators') then
     setOption(lcoCOperators)
+  else if (Directive = 'autoconstref') then
+    setOption(lcoAutoConstRef)
   else
     Result := False;
 end;

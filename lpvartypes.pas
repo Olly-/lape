@@ -21,7 +21,6 @@ type
     lcoRangeCheck,                     // {$R} {$RANGECHECKS}      TODO
     lcoShortCircuit,                   // {$B} {$BOOLEVAL}
     lcoAlwaysInitialize,               // {$M} {$MEMORYINIT}
-    lcoFullDisposal,                   // {$D} {$FULLDISPOSAL}
     lcoLooseSemicolon,                 // {$L} {$LOOSESEMICOLON}
     lcoLooseSyntax,                    // {$X} {$EXTENDEDSYNTAX}
     lcoAutoInvoke,                     // {$F} {$AUTOINVOKE}
@@ -31,13 +30,15 @@ type
     lcoHints,                          // {$H} {$HINTS}
     lcoContinueCase,                   //      {$CONTINUECASE}
     lcoCOperators,                     //      {$COPERATORS}
+    lcoAddRefOperator,
+    lcoFinalizeOperator,
     lcoInitExternalResult              // Ensure empty result for external calls (useful for ffi)
   );
   ECompilerOptionsSet = set of ECompilerOption;
   PCompilerOptionsSet = ^ECompilerOptionsSet;
 
 const
-  Lape_OptionsDef = [lcoCOperators, lcoRangeCheck, lcoHints, lcoShortCircuit, lcoAlwaysInitialize, lcoAutoInvoke, lcoConstAddress];
+  Lape_OptionsDef = [lcoAddRefOperator, lcoFinalizeOperator, lcoCOperators, lcoRangeCheck, lcoHints, lcoShortCircuit, lcoAlwaysInitialize, lcoAutoInvoke, lcoConstAddress];
   Lape_PackRecordsDef = 8;
 
 type
@@ -122,13 +123,14 @@ type
     function getHi: TLapeGlobalVar; virtual;
     function getInitialization: Boolean; virtual;
     function getFinalization: Boolean; virtual;
+    function getFinalizeOperator: Boolean; virtual;
 
     function getReadable: Boolean; virtual;
     procedure setReadable(AReadable: Boolean); virtual;
     function getWriteable: Boolean; virtual;
     procedure setWriteable(AWriteable: Boolean); virtual;
-    function getConstant: Boolean;
-    procedure setConstant(AConst: Boolean);
+    function getConstant: Boolean; virtual;
+    procedure setConstant(AConst: Boolean); virtual;
   public
     VarType: TLapeType;
 
@@ -144,6 +146,7 @@ type
     property Hi: TLapeGlobalVar read getHi;
     property NeedInitialization: Boolean read getInitialization;
     property NeedFinalization: Boolean read getFinalization;
+    property NeedFinalizeOperator: Boolean read getFinalizeOperator;
 
     property Readable: Boolean read getReadable write setReadable;
     property Writeable: Boolean read getWriteable write setWriteable;
@@ -174,6 +177,8 @@ type
     function Declock(Count: Integer = 1): Integer; virtual;
     property Locked: Boolean read getLocked write setLocked;
   end;
+
+  TLapeStackResultVar = class(TLapeStackTempVar);
 
   TLapeParameterVar = class(TLapeStackVar)
   protected
@@ -226,6 +231,7 @@ type
     FCompiler: TLapeCompilerBase;
     FSize: SizeInt;
     FInit: TInitBool;
+    FFinalizeOperator: TInitBool;
     FStatic: Boolean;
 
     FLo: TLapeGlobalVar;
@@ -236,12 +242,15 @@ type
     function getEvalProc(Op: EOperator; Left, Right: ELapeBaseType): TLapeEvalProc; virtual;
 
     procedure setBaseType(ABaseType: ELapeBaseType); virtual;
+    procedure setNeedFinalizeOperator(Value: Boolean); virtual;
+
     function getBaseIntType: ELapeBaseType; virtual;
     function getPadding: SizeInt; virtual;
     function getSize: SizeInt; virtual;
     function getInitialization: Boolean; virtual;
     function getFinalization: Boolean; virtual;
     function getAsString: lpString; virtual;
+    function getFinalizeOperator: Boolean; virtual;
   public
     TypeID: Integer;
 
@@ -290,6 +299,7 @@ type
     property IsStatic: Boolean read FStatic;
     property NeedInitialization: Boolean read getInitialization;
     property NeedFinalization: Boolean read getFinalization;
+    property NeedFinalizeOperator: Boolean read getFinalizeOperator write setNeedFinalizeOperator;
     property AsString: lpString read getAsString;
   end;
 
@@ -366,7 +376,9 @@ type
     FreeParams: Boolean;
     ImplicitParams: Integer;
     Res: TLapeType;
+    OperatorType: EOperator;
     IsOperator: Boolean;
+    IsClassOperator: Boolean;
     HintDirectives: ELapeHintDirectives;
     DeprecatedHint: String;
 
@@ -536,9 +548,8 @@ type
     CodePos: Integer;
 
     ForceInitialization: Boolean;
-    FullDisposal: Boolean;
 
-    constructor Create(AlwaysInitialize: Boolean = True; ForceDisposal: Boolean = False; AOwner: TLapeStackInfo = nil; ManageVars: Boolean = True); reintroduce; virtual;
+    constructor Create(AlwaysInitialize: Boolean = True; AOwner: TLapeStackInfo = nil; ManageVars: Boolean = True); reintroduce; virtual;
     destructor Destroy; override;
     procedure Clear; override;
 
@@ -551,7 +562,8 @@ type
     function addVar(StackVar: TLapeStackVar): TLapeStackVar; overload; virtual;
     function addVar(VarType: TLapeType; Name: lpString = ''): TLapeStackVar; overload; virtual;
     function addVar(ParType: ELapeParameterType; VarType: TLapeType; Name: lpString = ''): TLapeStackVar; overload; virtual;
-    function addSelfVar(ParType: ELapeParameterType; VarType: TLapeType): TLapeStackVar; overload; virtual;
+    function addSelfVar(ParType: ELapeParameterType; VarType: TLapeType): TLapeStackVar; virtual;
+    function addResultVar(VarType: TLapeType): TLapeStackVar; virtual;
 
     function inheritVar(StackVar: TLapeStackVar): TLapeStackVar; virtual;
     function getInheritedVar(StackVar: TLapeStackVar): TLapeStackVar; virtual;
@@ -988,6 +1000,14 @@ begin
   Writeable := Other.Writeable;
 end;
 
+function TLapeVar.getFinalizeOperator: Boolean;
+begin
+  if HasType() then
+    Result := VarType.NeedFinalizeOperator
+  else
+    Result := False;
+end;
+
 function TLapeVar.getBaseType: ELapeBaseType;
 begin
   if HasType() then
@@ -1372,6 +1392,14 @@ begin
   FBaseType := ABaseType;
 end;
 
+procedure TLapeType.setNeedFinalizeOperator(Value: Boolean);
+begin
+  if Value then
+    FFinalizeOperator := bTrue
+  else
+    FFinalizeOperator := bFalse;
+end;
+
 function TLapeType.getBaseIntType: ELapeBaseType;
 begin
   if (not (FBaseType in LapeOrdinalTypes{ + [ltPointer]})) then
@@ -1533,6 +1561,11 @@ end;
 function TLapeType.IsOrdinal(OrPointer: Boolean = False): Boolean;
 begin
   Result := (BaseIntType <> ltUnknown) or (OrPointer and (BaseType = ltPointer));
+end;
+
+function TLapeType.getFinalizeOperator: Boolean;
+begin
+  Result := FFinalizeOperator = bTrue;
 end;
 
 function TLapeType.HasChild(AName: lpString): Boolean;
@@ -3430,7 +3463,7 @@ begin
   Result := False;
 end;
 
-constructor TLapeStackInfo.Create(AlwaysInitialize: Boolean = True; ForceDisposal: Boolean = False; AOwner: TLapeStackInfo = nil; ManageVars: Boolean = True);
+constructor TLapeStackInfo.Create(AlwaysInitialize: Boolean = True; AOwner: TLapeStackInfo = nil; ManageVars: Boolean = True);
 begin
   inherited Create(nil, False);
 
@@ -3441,7 +3474,6 @@ begin
   CodePos := -1;
 
   ForceInitialization := AlwaysInitialize;
-  FullDisposal := ForceDisposal;
 end;
 
 destructor TLapeStackInfo.Destroy;
@@ -3518,14 +3550,15 @@ begin
     Exit;
 
   try
-    for i := 0 to FVarStack.Count - 1 do
-      if (FVarStack[i] is TLapeStackTempVar) and (not TLapeStackTempVar(FVarStack[i]).Locked) and FVarStack[i].VarType.Equals(VarType) then
-      begin
-        Result := FVarStack[i] as TLapeStackTempVar;
-        Result.VarType := VarType;
-        Result.isConstant := False;
-        Exit;
-      end;
+   // if not VarType.NeedFinalizeOperator then
+      for i := 0 to FVarStack.Count - 1 do
+        if (FVarStack[i] is TLapeStackTempVar) and (not TLapeStackTempVar(FVarStack[i]).Locked) and FVarStack[i].VarType.Equals(VarType) then
+        begin
+          Result := FVarStack[i] as TLapeStackTempVar;
+          Result.VarType := VarType;
+          Result.isConstant := False;
+          Exit;
+        end;
     Result := addVar(VarType) as TLapeStackTempVar;
   finally
     if (Result <> nil) then
@@ -3576,6 +3609,11 @@ begin
   Result := addVar(ParType, VarType, 'Self');
 end;
 
+function TLapeStackInfo.addResultVar(VarType: TLapeType): TLapeStackVar;
+begin
+  Result := addVar(TLapeStackResultVar.Create(VarType, nil));
+end;
+
 function TLapeStackInfo.inheritVar(StackVar: TLapeStackVar): TLapeStackVar;
 begin
   Assert(StackVar <> nil);
@@ -3615,7 +3653,7 @@ end;
 constructor TLapeDeclStack.Create(AList: TLapeManagingDeclaration; AOwner: TLapeStackInfo = nil);
 begin
   Assert(AList <> nil);
-  inherited Create(False, False, AOwner, False);
+  inherited Create(False, AOwner, False);
 
   Parent := AList.ManagedDeclarations;
   FManagingList := AList;
@@ -4070,7 +4108,7 @@ end;
 
 function TLapeCompilerBase.IncStackInfo(var Offset: Integer; Emit: Boolean = True; Pos: PDocPos = nil): TLapeStackInfo;
 begin
-  Result := IncStackInfo(TLapeStackInfo.Create(lcoAlwaysInitialize in FOptions, lcoFullDisposal in FOptions, FStackInfo), Offset, Emit, Pos);
+  Result := IncStackInfo(TLapeStackInfo.Create(lcoAlwaysInitialize in FOptions, FStackInfo), Offset, Emit, Pos);
 end;
 
 function TLapeCompilerBase.IncStackInfo(Emit: Boolean = False): TLapeStackInfo;
@@ -4108,12 +4146,14 @@ var
 
   function NeedFinalization(v: TLapeVar): Boolean;
   begin
-    Result := v <> nil;
-    if Result then
-      if (not FStackInfo.FullDisposal) then
-        Result := v.NeedFinalization
-      else if (v is TLapeParameterVar) then
-        Result := (not (TLapeParameterVar(v).ParType in Lape_RefParams));
+    Result := False;
+
+    if (v <> nil) then
+    begin
+      Result := v.NeedFinalization;
+      if (not Result) and v.NeedFinalizeOperator then
+        Result := (not (v is TLapeParameterVar)) or (TLapeParameterVar(v).ParType = lptNormal);
+    end;
   end;
 
 begin
@@ -4186,9 +4226,7 @@ begin
         Emitter._InitStackLen(Emitter.MaxStack, InitStackPos, Pos)
       else
         RemoveInitStack();
-    end
-    else
-      FStackInfo.FullDisposal := lcoFullDisposal in FOptions;
+    end;
 
     Emitter.NewStack(FStackInfo.FOldStackPos, FStackInfo.FOldMaxStack);
     if DoFree then

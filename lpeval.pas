@@ -399,7 +399,8 @@ var
     '  I, J: Int32;'                                                                     + LineEnding +
     '  Item: Pointer;'                                                                   + LineEnding +
     'begin'                                                                              + LineEnding +
-    '  if (Compare = nil) then raise "Compare function is nil";'                         + LineEnding +
+    '  if (Compare = nil) then'                                                          + LineEnding +
+    '    raise "Compare function is nil";'                                               + LineEnding +
     ''                                                                                   + LineEnding +
     '  Item := GetMem(ElSize);'                                                          + LineEnding +
     '  for I := 1 to Len - 1 do'                                                         + LineEnding +
@@ -412,31 +413,6 @@ var
     '      Dec(J);'                                                                      + LineEnding +
     '    end;'                                                                           + LineEnding +
     '    Move(Item^, A[(J+1) * ElSize]^, ElSize);'                                       + LineEnding +
-    '  end;'                                                                             + LineEnding +
-    '  FreeMem(Item);'                                                                   + LineEnding +
-    'end;'                                                                               + LineEnding +
-    ''                                                                                   + LineEnding +
-    'procedure _Sort(A: Pointer; ElSize, Len: SizeInt;'                                  + LineEnding +
-    '  Compare: function(constref A, B): Int32;'                                         + LineEnding +
-    '  Copy: private procedure(Src: ConstPointer; Dst: Pointer)); overload;'             + LineEnding +
-    'var'                                                                                + LineEnding +
-    '  I, J: Int32;'                                                                     + LineEnding +
-    '  Item: Pointer;'                                                                   + LineEnding +
-    'begin'                                                                              + LineEnding +
-    '  if (Compare = nil) then raise "Compare function is nil";'                         + LineEnding +
-    '  if (Copy = nil) then raise "Copy function is nil";'                               + LineEnding +
-    ''                                                                                   + LineEnding +
-    '  Item := GetMem(ElSize);'                                                          + LineEnding +
-    '  for I := 1 to Len - 1 do'                                                         + LineEnding +
-    '  begin'                                                                            + LineEnding +
-    '    Copy(A[I * ElSize], Item);'                                                     + LineEnding +
-    '    J := I - 1;'                                                                    + LineEnding +
-    '    while (J >= 0) and (Compare(A[J * ElSize]^, Item^) > 0) do'                     + LineEnding +
-    '    begin'                                                                          + LineEnding +
-    '      Copy(A[J * ElSize], A[(J+1) * ElSize]);'                                      + LineEnding +
-    '      Dec(J);'                                                                      + LineEnding +
-    '    end;'                                                                           + LineEnding +
-    '    Copy(Item, A[(J+1) * ElSize]);'                                                 + LineEnding +
     '  end;'                                                                             + LineEnding +
     '  FreeMem(Item);'                                                                   + LineEnding +
     'end;';

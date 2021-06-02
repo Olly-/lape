@@ -2015,6 +2015,9 @@ var
 begin
   if (FRealIdent = nil) and (not isEmpty(FExpr)) then
   begin
+    if (FExpr is TLapeTree_Operator) then
+      FExpr.ClearCache();
+
     Typ := FExpr.resType();
 
     if (not (FExpr is TLapeTree_VarType)) and (Typ is TLapeType_OverloadedMethod) then

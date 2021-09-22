@@ -1,0 +1,18 @@
+type
+  TArr = array of Int32;
+
+  TCrash = record
+    A: TArr;
+    B: String;
+    C: String;
+  end;
+
+procedure test_crash(const test: TCrash);
+begin
+end;
+
+var
+  crash: TCrash = [[1]];
+begin
+  test_crash(crash); // access violation when test is passed as normal or const
+end.

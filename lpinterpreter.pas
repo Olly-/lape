@@ -25,7 +25,7 @@ type
     ocGetExceptionMessage,                                     //GetExceptionMessage
     ocInitStackLen,                                            //InitStackLen TStackOffset
     ocInitVarLen,                                              //InitVarLen TStackOffset
-    ocInitStack,                                               //InitStack TStackOffset
+    //ocInitStack,                                               //InitStack TStackOffset
     ocGrowStack,                                               //GrowStack TStackOffset
     ocExpandVar,                                               //ExpandVar TStackOffset
     ocExpandVarAndInit,                                        //ExpandVarAndInit TStackOffset
@@ -319,6 +319,7 @@ var
     InitStackSize := PStackOffset(PtrUInt(Code) + ocSize)^;
     if (StackPos + InitStackSize > UInt32(Length(Stack))) then
       SetLength(Stack, StackPos + InitStackSize + (StackSize div 2));
+    FillChar(Stack[StackPos], InitStackSize, 0);
     Inc(Code, SizeOf(TStackOffset) + ocSize);
   end;
 
@@ -329,6 +330,7 @@ var
     Inc(Code, SizeOf(TStackOffset) + ocSize);
   end;
 
+  {
   procedure DoInitStack; {$IFDEF Lape_Inline}inline;{$ENDIF}
   var
     InitStackSize: TStackOffset;
@@ -339,6 +341,7 @@ var
     FillChar(Stack[StackPos], InitStackSize, 0);
     Inc(Code, SizeOf(TStackOffset) + ocSize);
   end;
+  }
 
   procedure DoGrowStack; {$IFDEF Lape_Inline}inline;{$ENDIF}
   var

@@ -119,8 +119,6 @@ type
     function _InitStackLen(Len: TStackOffset; Pos: PDocPos = nil): Integer; overload;
     function _InitVarLen(Len: TStackOffset; var Offset: Integer; Pos: PDocPos = nil): Integer; overload;
     function _InitVarLen(Len: TStackOffset; Pos: PDocPos = nil): Integer; overload;
-    function _InitStack(Len: TStackOffset; var Offset: Integer; Pos: PDocPos = nil): Integer; overload;
-    function _InitStack(Len: TStackOffset; Pos: PDocPos = nil): Integer; overload;
     function _GrowStack(Len: TStackOffset; var Offset: Integer; Pos: PDocPos = nil): Integer; overload;
     function _GrowStack(Len: TStackOffset; Pos: PDocPos = nil): Integer; overload;
     function _ExpandVar(Len: TStackOffset; var Offset: Integer; Pos: PDocPos = nil): Integer; overload;
@@ -521,12 +519,6 @@ begin
   _StackOffset(Len, Offset);
 end;
 
-function TLapeCodeEmitterBase._InitStack(Len: TStackOffset; var Offset: Integer; Pos: PDocPos = nil): Integer;
-begin
-  Result := _op(ocInitStack, Offset, Pos);
-  _StackOffset(Len, Offset);
-end;
-
 function TLapeCodeEmitterBase._GrowStack(Len: TStackOffset; var Offset: Integer; Pos: PDocPos = nil): Integer;
 begin
   Result := _op(ocGrowStack, Offset, Pos);
@@ -664,8 +656,6 @@ function TLapeCodeEmitterBase._InitStackLen(Len: TStackOffset; Pos: PDocPos = ni
   var o: Integer; begin o := -1; Result := _InitStackLen(Len, o, Pos); end;
 function TLapeCodeEmitterBase._InitVarLen(Len: TStackOffset; Pos: PDocPos = nil): Integer;
   var o: Integer; begin o := -1; Result := _InitVarLen(Len, o, Pos); end;
-function TLapeCodeEmitterBase._InitStack(Len: TStackOffset; Pos: PDocPos = nil): Integer;
-  var o: Integer; begin o := -1; Result := _InitStack(Len, o, Pos); end;
 function TLapeCodeEmitterBase._GrowStack(Len: TStackOffset; Pos: PDocPos = nil): Integer;
   var o: Integer; begin o := -1; Result := _GrowStack(Len, o, Pos); end;
 function TLapeCodeEmitterBase._ExpandVar(Len: TStackOffset; Pos: PDocPos = nil): Integer;

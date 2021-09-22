@@ -2510,8 +2510,8 @@ var
       end
       else
       begin
-        if AVar.HasType() and AVar.VarType.NeedInitialization then
-          FCompiler.Emitter._InitStack(AVar.VarType.Size, Offset, @DocPos);
+        //if AVar.HasType() and AVar.VarType.NeedInitialization then
+        //  FCompiler.Emitter._InitStack(AVar.VarType.Size, Offset, @DocPos);
         Result.VarType := AVar.VarType;
         Result := AVar.VarType.Eval(op_Assign, tmpVar, Result, AVar, [], Offset, @DocPos);
       end;
@@ -2532,9 +2532,9 @@ var
       Par.VarPos.MemPos := MemPos;
       Par.VarType := Param.VarType;
       if (MemPos = mpVar) then
-        Par.VarPos.StackVar := Compiler.getTempVar(Par.VarType)
-      else if (MemPos = mpStack) and Par.HasType() and Par.VarType.NeedInitialization then
-        FCompiler.Emitter._InitStack(Par.VarType.Size, Offset, @DocPos);
+        Par.VarPos.StackVar := Compiler.getTempVar(Par.VarType);
+      //else if (MemPos = mpStack) and Par.HasType() and Par.VarType.NeedInitialization then
+      //  FCompiler.Emitter._InitStack(Par.VarType.Size, Offset, @DocPos);
       Par.setConstant(False, False);
 
       tmpRes := ParamVar;
@@ -2582,8 +2582,7 @@ var
 
     with TLapeType_Method(IdentVar.VarType) do
     begin
-      //if ParamInitialization then
-      //  FCompiler.Emitter._InitStack(ParamSize, Offset, @Self._DocPos);
+        FCompiler.Emitter._InitStackLen(ParamSize, Offset, @Self._DocPos);
 
       for i := 0 to Params.Count - 1 do
       try

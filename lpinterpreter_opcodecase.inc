@@ -13,7 +13,7 @@ case opCode(opCodeTypeP(Code)^) of
   ocGetExceptionMessage: DoGetExceptionMessage();
   ocInitStackLen: DoInitStackLen();
   ocInitVarLen: DoInitVarLen();
-  ocInitStack: DoInitStack();
+  //ocInitStack: DoInitStack();
   ocGrowStack: DoGrowStack();
   ocExpandVar: DoExpandVar();
   ocExpandVarAndInit: DoExpandVarAndInit();

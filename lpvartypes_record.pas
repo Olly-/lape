@@ -417,6 +417,10 @@ begin
 
         LeftVar := Eval(op_Dot, tmpVar, Left, LeftFieldName, [lefAssigning], Offset, Pos);
         RightVar := Right.VarType.Eval(op_Dot, tmpVar, Right, RightFieldName, [], Offset, Pos);
+
+        //if LeftVar.VarType.NeedInitialization then
+        //  FCompiler.Emitter._InitStack(LeftVar.VarType.Size, Offset);
+
         LeftVar.VarType.Eval(op_Assign, Dest, LeftVar, RightVar, [], Offset, Pos);
 
         if (LeftVar.VarPos.MemPos = mpStack) then

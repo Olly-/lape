@@ -1,0 +1,42 @@
+{$assertions on}
+
+type
+  TPoint = record X, Y: Integer; end;
+  TBox = record X1, Y1, X2, Y2: Integer; end;
+  TCircle = record Center: TPoint; Radius: Integer; end;
+
+  TPointAndBox = record(TPoint, TBox)
+    Name: String;
+  end;
+
+  TPointAndBoxAndCircle = record(TPointAndBox, TCircle)
+    AnotherName: String;
+  end;
+
+var
+  PointAndBox: TPointAndBox;
+  PointAndBoxAndCircle: TPointAndBoxAndCircle;
+begin
+  PointAndBox.X := 1;
+  PointAndBox.Y := 2;
+  PointAndBox.X1 := 3;
+  PointAndBox.Y1 := 4;
+  PointAndBox.X2 := 5;
+  PointAndBox.Y2 := 6;
+  PointAndBox.Name := 'PointAndBox';
+
+  Assert(PointAndBox = [1,2,3,4,5,6,'PointAndBox']);
+
+  PointAndBoxAndCircle.X := 1;
+  PointAndBoxAndCircle.Y := 2;
+  PointAndBoxAndCircle.X1 := 3;
+  PointAndBoxAndCircle.Y1 := 4;
+  PointAndBoxAndCircle.X2 := 5;
+  PointAndBoxAndCircle.Y2 := 6;
+  PointAndBoxAndCircle.Name := 'PointAndBox';
+  PointAndBoxAndCircle.Center := [7, 8];
+  PointAndBoxAndCircle.Radius := 9;
+  PointAndBoxAndCircle.AnotherName := 'PointAndBoxAndCircle';
+
+  Assert(PointAndBoxAndCircle = [1,2,3,4,5,6,'PointAndBox',[7,8],9,'PointAndBoxAndCircle']);
+end.

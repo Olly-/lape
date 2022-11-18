@@ -1794,7 +1794,7 @@ begin
         if (Typ is TLapeVar) then
           Typ := TLapeVar(Typ).VarType;
 
-        if (Typ is TLapeType) and (TLapeType(Typ).Size > 0) then
+        if (Typ is TLapeType) then
         begin
           if addToScope then
             FStackInfo.addSelfVar(Lape_SelfParam, TLapeType(Typ));
@@ -2324,6 +2324,7 @@ begin
 end;
 
 function TLapeCompiler.ParseType(TypeForwards: TLapeTypeForwards; addToStackOwner: Boolean = False): TLapeType;
+
   procedure ParseArray;
   var
     TypeExpr: TLapeTree_Base;
@@ -2383,7 +2384,13 @@ function TLapeCompiler.ParseType(TypeForwards: TLapeTypeForwards; addToStackOwne
           Rec.inheritFrom(Decl as TLapeType_Record);
         end;
 
-        Tokenizer.Expect(tk_sym_ParenthesisClose, False, True);
+        Tokenizer.Expect(tk_sym_ParenthesisClose, False, False);
+        if (Peek() = tk_sym_SemiColon) then
+        begin
+          Result := addManagedType(Rec);
+          Exit;
+        end else
+          Next();
       end;
     end else
       Rec := TLapeType_Union.Create(Self, nil, '', getPDocPos());
@@ -2826,7 +2833,7 @@ begin
           VarType := DefExpr.resType()
         else
           LapeException(lpeCannotAssign, Tokenizer.DocPos);
-      if (VarType = nil) or (VarType.Size < 1) then
+      if (VarType = nil) then
         LapeException(lpeTypeExpected, Tokenizer.DocPos);
 
       for i := 0 to High(Identifiers) do

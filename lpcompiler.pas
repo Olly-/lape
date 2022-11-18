@@ -2360,22 +2360,32 @@ function TLapeCompiler.ParseType(TypeForwards: TLapeTypeForwards; addToStackOwne
     IsConst: Boolean;
     Expression: TLapeTree_ExprBase;
     FieldValue: TLapeGlobalVar;
+    Decl: TLapeDeclaration;
   begin
     IsRecord := Tokenizer.Tok = tk_kw_Record;
 
     Next();
-    if (Tokenizer.Tok = tk_sym_ParenthesisOpen) then
+    if IsRecord then
     begin
-      FieldType := ParseType(nil, addToStackOwner);
-      if (not (FieldType is TLapeType_Record)) or (IsRecord <> (FieldType.BaseType = ltRecord)) then
-        LapeException(lpeUnknownParent, Tokenizer.DocPos);
-      Tokenizer.Expect(tk_sym_ParenthesisClose, True, True);
+      Rec := TLapeType_Record.Create(Self, nil, '', getPDocPos());
 
-      Rec := FieldType.CreateCopy(True) as TLapeType_Record;
-    end
-    else if IsRecord then
-      Rec := TLapeType_Record.Create(Self, nil, '', getPDocPos())
-    else
+      if (Tokenizer.Tok = tk_sym_ParenthesisOpen) then
+      begin
+        Identifiers := ParseIdentifierList(True);
+        for i := 0 to High(Identifiers) do
+        begin
+          Decl := getDeclaration(Identifiers[i]);
+          if (Decl = nil) then
+            LapeExceptionFmt(lpeUnknownDeclaration, [Identifiers[i]], Tokenizer.DocPos)
+          else if (not (Decl is TLapeType_Record)) then
+            LapeExceptionFmt(lpeIsNotRecord, [Identifiers[i]], Tokenizer.DocPos);
+
+          Rec.inheritFrom(Decl as TLapeType_Record);
+        end;
+
+        Tokenizer.Expect(tk_sym_ParenthesisClose, False, True);
+      end;
+    end else
       Rec := TLapeType_Union.Create(Self, nil, '', getPDocPos());
 
     repeat

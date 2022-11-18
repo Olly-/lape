@@ -66,6 +66,7 @@ const
   lpeExpressionExpected = 'Expression expected';
   lpeExpectedEnum = 'Enum expected';
   lpeFileNotFound = 'File "%s" not found';
+  lpeIsNotRecord = '"%s" is not a record';
   lpeImpossible = 'It''s impossible!';
   lpeIncompatibleAssignment = 'Can''t assign "%s" to "%s"';
   lpeIncompatibleOperator = 'Operator "%s" is not supported for type';

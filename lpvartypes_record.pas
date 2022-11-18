@@ -34,6 +34,9 @@ type
 
     constructor Create(ACompiler: TLapeCompilerBase; AFieldMap: TRecordFieldMap; AName: lpString = ''; ADocPos: PDocPos = nil); reintroduce; virtual;
     function CreateCopy(DeepCopy: Boolean = False): TLapeType; override;
+
+    procedure inheritFrom(Other: TLapeType_Record);
+
     destructor Destroy; override;
 
     procedure ClearCache; override;
@@ -256,6 +259,23 @@ begin
     FInit := Self.FInit;
     FSize := Self.FSize;
     FAlignment := Self.FAlignment;
+  end;
+end;
+
+procedure TLapeType_Record.inheritFrom(Other: TLapeType_Record);
+var
+  i: Integer;
+begin
+  with TLapeType_Record(Self) do
+  begin
+    for i := 0 to Other.FieldMap.Count - 1 do
+      FFieldMap.Add(Other.FieldMap.Key[I], Other.FieldMap.ItemsI[I]);
+
+    if (Other.FInit = bTrue) then
+      FInit := bTrue;
+    FSize := FSize + Other.FSize;
+
+    inheritManagedDecls(Other, False);
   end;
 end;
 

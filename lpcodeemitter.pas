@@ -26,7 +26,7 @@ type
 
   TLapeCodeEmitterBase = class(TLapeBaseClass)
   protected
-    _PCode: Pointer;
+    FCodePtr: PByte;
     FCode: TCodeArray;
     FCodeCur: Integer;
     FCodeSize: Integer;
@@ -56,8 +56,6 @@ type
     procedure _PointerOffset(v: TPointerOffset; Pos: PPointerOffset); overload; virtual;
     procedure _ParamSize(v: TParamSize; Pos: PParamSize); overload; virtual;
 
-    function getPCode: Pointer;
-    function getPCodeLen: PInteger;
     procedure IncStack(Size: TStackInc); virtual;
     procedure DecStack(Size: TStackInc); virtual;
   public
@@ -171,10 +169,8 @@ type
     {$I lpcodeemitter_jumpheader.inc}
     {$I lpcodeemitter_evalheader.inc}
 
-    property PCode: Pointer read getPCode;
-    property Code: Pointer read _PCode;
+    property Code: PByte read FCodePtr;
     property CodeLen: Integer read FCodeCur;
-    property PCodeLen: PInteger read getPCodeLen;
     property MaxStack: Integer read FMaxStack;
     property CodePointers: TLapeCodePointers read FCodePointers;
   end;
@@ -205,16 +201,6 @@ procedure TLapeCodeEmitterBase._PointerOffset(v: TPointerOffset; Pos: PPointerOf
 procedure TLapeCodeEmitterBase._StackOffset(v: TStackOffset; Pos: PStackOffset);          begin Pos^ := v; end;
 procedure TLapeCodeEmitterBase._ParamSize(v: TParamSize; Pos: PParamSize);                begin Pos^ := v; DecStack(v); end;
 
-function TLapeCodeEmitterBase.getPCode: Pointer;
-begin
-  Result := @_PCode;
-end;
-
-function TLapeCodeEmitterBase.getPCodeLen: PInteger;
-begin
-  Result := @FCodeCur;
-end;
-
 procedure TLapeCodeEmitterBase.IncStack(Size: TStackInc);
 begin
   if (not FullEmit) then
@@ -236,7 +222,7 @@ constructor TLapeCodeEmitterBase.Create;
 begin
   inherited;
 
-  FCodePointers := TLapeCodePointers.Create(Default(TLapeCodePointer), dupIgnore, False);
+  FCodePointers := TLapeCodePointers.Create(Default(TLapeCodePointer), dupAccept, False);
   CodeGrowSize := 256;
   FullEmit := True;
   Reset();
@@ -250,7 +236,7 @@ end;
 
 procedure TLapeCodeEmitterBase.Reset;
 begin
-  _PCode := nil;
+  FCodePtr := nil;
   FCodeSize := CodeGrowSize;
   SetLength(FCode, FCodeSize);
   FCodePointers.Clear();
@@ -310,7 +296,7 @@ begin
       FCodeSize := FCodeSize + CodeGrowSize;
 
     SetLength(FCode, FCodeSize);
-    _PCode := @FCode[0];
+    FCodePtr := @FCode[0];
   end;
 end;
 

@@ -84,11 +84,11 @@ const
   Try_NoExcept: UInt32 = UInt32(-2);
   EndJump: TCodePos = TCodePos(-1);
 
-  StackSize = 2048 * SizeOf(Pointer);
-  VarStackSize = 512 * SizeOf(Pointer);
-  VarStackStackSize = 32;
-  TryStackSize = 512;
-  CallStackSize = 512;
+  StackSize = 1024 * SizeOf(Pointer);
+  VarStackSize = 256 * SizeOf(Pointer);
+  VarStackStackSize = 16;
+  TryStackSize = 256;
+  CallStackSize = 256;
 
 type
   TInJump = record
@@ -102,6 +102,15 @@ type
     end;
     JumpSafe: PByte;
   end;
+
+type
+  ECodeRunnerOption = (
+    lcroMethodMap
+  );
+  ECodeRunnerOptionSet = set of ECodeRunnerOption;
+
+const
+  LapeCodeRunner_OptionsDef = [lcroMethodMap];
 
 type
   TLapeCodeRunner = class(TLapeBaseClass)
@@ -142,6 +151,7 @@ type
     end;
     FCallStackPos: UInt32;
 
+    FOptions: ECodeRunnerOptionSet;
     FMethodMap: TMethodMap;
     FExceptionStackTrace: String;
 
@@ -150,8 +160,7 @@ type
   public
     DoContinue: TInitBool;
 
-    constructor Create(CodeBase: PByte; CodeLen: Integer); reintroduce; overload;
-    constructor Create(Emitter: TLapeBaseClass); reintroduce; overload;
+    constructor Create(Emitter: TLapeBaseClass; Options: ECodeRunnerOptionSet = LapeCodeRunner_OptionsDef); reintroduce;
     destructor Destroy; override;
 
     procedure Run(InitialVarStack: TByteArray = nil; InitialJump: TCodePos = 0);
@@ -195,34 +204,31 @@ begin
   Result := FMethodMap[Pointer(PtrUInt(CodePos))];
 end;
 
-constructor TLapeCodeRunner.Create(CodeBase: PByte; CodeLen: Integer);
+constructor TLapeCodeRunner.Create(Emitter: TLapeBaseClass; Options: ECodeRunnerOptionSet);
+var
+  CodeEmitter: TLapeCodeEmitter absolute Emitter;
+  i: Integer;
 begin
   inherited Create();
 
+  if (not (Emitter is TLapeCodeEmitter)) then
+    LapeException(lpeImpossible);
+
   FMethodMap := TMethodMap.Create();
+  FOptions := Options;
 
   SetLength(FStack, StackSize);
   SetLength(FTryStack, TryStackSize);
   SetLength(FCallStack, CallStackSize);
   SetLength(FVarStackStack, VarStackStackSize);
 
-  FCodeBase := CodeBase;
-  FCodeUpper := PByte(CodeBase + CodeLen);
-end;
+  FCodeBase := CodeEmitter.Code;
+  FCodeUpper := @FCodeBase[CodeEmitter.CodeLen];
 
-constructor TLapeCodeRunner.Create(Emitter: TLapeBaseClass);
-var
-  i: Integer;
-  CodeEmitter: TLapeCodeEmitter absolute Emitter;
-begin
-  if (not (Emitter is TLapeCodeEmitter)) then
-    LapeException(lpeImpossible);
-
-  Create(CodeEmitter.Code, CodeEmitter.CodeLen);
-
-  with CodeEmitter.CodePointers do
-    for i := 0 to Count - 1 do
-      FMethodMap.Items[Pointer(PtrUInt(Items[i].Pos^))] := Items[i].Name;
+  if (lcroMethodMap in Options) then
+    with CodeEmitter.CodePointers do
+      for i := 0 to Count - 1 do
+        FMethodMap.Items[Pointer(PtrUInt(Items[i].Pos^))] := Items[i].Name;
 end;
 
 destructor TLapeCodeRunner.Destroy;

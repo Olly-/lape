@@ -21,7 +21,7 @@ type
 
   TLapeCodeEmitterBase = class(TLapeBaseClass)
   protected
-    _PCode: Pointer;
+    FCodePtr: PByte;
     FCode: TCodeArray;
     FCodeCur: Integer;
     FCodeSize: Integer;
@@ -40,7 +40,7 @@ type
     procedure _UInt64(v: UInt64; Pos: PUInt64); overload; virtual;
     procedure _Pointer(v: Pointer; Pos: PPointer); overload; virtual;
 
-    procedure _Opcode(v: opCode; Pos: opCodeTypeP); overload; virtual;
+    procedure _Opcode(v: opCode; Pos: opCodeP); overload; virtual;
     procedure _CodePos(v: TCodePos; Pos: PCodePos); overload; virtual;
     procedure _CodeOffset(v: TCodeOffset; Pos: PCodeOffset); overload; virtual;
 
@@ -51,8 +51,6 @@ type
     procedure _PointerOffset(v: TPointerOffset; Pos: PPointerOffset); overload; virtual;
     procedure _ParamSize(v: TParamSize; Pos: PParamSize); overload; virtual;
 
-    function getPCode: Pointer;
-    function getPCodeLen: PInteger;
     procedure IncStack(Size: TStackInc); virtual;
     procedure DecStack(Size: TStackInc); virtual;
   public
@@ -166,10 +164,8 @@ type
     {$I lpcodeemitter_jumpheader.inc}
     {$I lpcodeemitter_evalheader.inc}
 
-    property PCode: Pointer read getPCode;
-    property Code: Pointer read _PCode;
+    property Code: PByte read FCodePtr;
     property CodeLen: Integer read FCodeCur;
-    property PCodeLen: PInteger read getPCodeLen;
     property MaxStack: Integer read FMaxStack;
   end;
 
@@ -188,7 +184,7 @@ procedure TLapeCodeEmitterBase._Int64(v: Int64; Pos: PInt64);       begin Pos^ :
 procedure TLapeCodeEmitterBase._UInt64(v: UInt64; Pos: PUInt64);    begin Pos^ := v; end;
 procedure TLapeCodeEmitterBase._Pointer(v: Pointer; Pos: PPointer); begin Pos^ := v; end;
 
-procedure TLapeCodeEmitterBase._Opcode(v: opCode; Pos: opCodeTypeP);          begin Pos^ := opCodeType(v); end;
+procedure TLapeCodeEmitterBase._Opcode(v: opCode; Pos: opCodeP);          begin Pos^ := v; end;
 procedure TLapeCodeEmitterBase._CodePos(v: TCodePos; Pos: PCodePos);          begin Pos^ := v; end;
 procedure TLapeCodeEmitterBase._CodeOffset(v: TCodeOffset; Pos: PCodeOffset); begin Pos^ := v; end;
 
@@ -198,16 +194,6 @@ procedure TLapeCodeEmitterBase._VarStackOffset(v: TVarStackOffset; Pos: PVarStac
 procedure TLapeCodeEmitterBase._PointerOffset(v: TPointerOffset; Pos: PPointerOffset);    begin Pos^ := v; end;
 procedure TLapeCodeEmitterBase._StackOffset(v: TStackOffset; Pos: PStackOffset);          begin Pos^ := v; end;
 procedure TLapeCodeEmitterBase._ParamSize(v: TParamSize; Pos: PParamSize);                begin Pos^ := v; DecStack(v); end;
-
-function TLapeCodeEmitterBase.getPCode: Pointer;
-begin
-  Result := @_PCode;
-end;
-
-function TLapeCodeEmitterBase.getPCodeLen: PInteger;
-begin
-  Result := @FCodeCur;
-end;
 
 procedure TLapeCodeEmitterBase.IncStack(Size: TStackInc);
 begin
@@ -244,11 +230,11 @@ end;
 
 procedure TLapeCodeEmitterBase.Reset;
 begin
-  _PCode := nil;
+  FCodeCur := 0;
   FCodeSize := CodeGrowSize;
   SetLength(FCode, FCodeSize);
+  FCodePtr := @FCode[0];
   FCodePointers.Clear();
-  FCodeCur := 0;
   NewStack();
 end;
 
@@ -309,7 +295,7 @@ begin
       FCodeSize := FCodeSize + CodeGrowSize;
 
     SetLength(FCode, FCodeSize);
-    _PCode := @FCode[0];
+    FCodePtr := @FCode[0];
   end;
 end;
 
@@ -405,9 +391,9 @@ end;
 
 function TLapeCodeEmitterBase._Opcode(v: opCode; var Offset: Integer): Integer;
 begin
-  Result := CheckOffset(Offset, SizeOf(opCodeType));
+  Result := CheckOffset(Offset, SizeOf(opCode));
   _Opcode(v, @FCode[Offset]);
-  Inc(Offset, SizeOf(opCodeType));
+  Inc(Offset, SizeOf(opCode));
 end;
 
 function TLapeCodeEmitterBase._CodePos(v: TCodePos; var Offset: Integer): Integer;

@@ -1,5 +1,7 @@
 program LapeTestFFI;
 
+{$i lape.inc}
+
 uses
   SysUtils, {$IFDEF FPC}LCLIntf,{$ELSE}{$IFDEF MSWINDOWS}Windows,{$ENDIF}{$ENDIF}
   lptypes, lpvartypes, lpcompiler, lptree, lpparser, lpinterpreter, lpmessages,
@@ -95,7 +97,7 @@ begin
   Result := Success;
 end;
 
-procedure Proc4(a: Single; b: UInt8; c: Double; d: UInt16; e: Currency; f: UInt32; g: Extended; h: UInt64); {$I cconv.inc}
+procedure Proc4(a: Single; b: UInt8; c: Double; d: UInt16; e: Currency; f: UInt32; g: lpFloat; h: UInt64); {$I cconv.inc}
 begin
   Success := (a = 1.5) and (b = 2) and (c = 3.5) and (d = 4)
          and (e = 5.5) and (f = 6) and (g = 7.5) and (h = 8);
@@ -104,7 +106,7 @@ end;
 
 function RunProc4(p: Pointer): Boolean;
 type
-  TP = procedure(a: Single; b: UInt8; c: Double; d: UInt16; e: Currency; f: UInt32; g: Extended; h: UInt64); {$I cconv.inc}
+  TP = procedure(a: Single; b: UInt8; c: Double; d: UInt16; e: Currency; f: UInt32; g: lpFloat; h: UInt64); {$I cconv.inc}
 begin
   Success := False;
   TP(p)(1.5, 2, 3.5, 4, 5.5, 6, 7.5, 8);
@@ -292,14 +294,14 @@ begin
   Result := TF(f)(5) = 15.0;
 end;
 
-function Func5(const a: Extended): Extended; {$I cconv.inc}
+function Func5(const a: lpFloat): lpFloat; {$I cconv.inc}
 begin
   Result := a * 10.0;
 end;
 
 function RunFunc5(f: Pointer): Boolean;
 type
-  TF = function(const a: Extended): Extended; {$I cconv.inc}
+  TF = function(const a: lpFloat): lpFloat; {$I cconv.inc}
 begin
   Result := TF(f)(10) = 100.0;
 end;
@@ -931,6 +933,10 @@ begin
         @t,
         'Test'
       );
+
+      {$IFDEF Lape_NoExtended}
+      addGlobalType('Double', 'Extended');
+      {$ENDIF}
 
       addDelayedCode('function LapeCallback: Int32; begin Result := 1989; end;');
       addDelayedCode('function TTest.LapeCallback: Int32; begin Assert(Self.MagicToken = 12345); Result := 1989; end;');

@@ -848,6 +848,9 @@ const
 begin
   Result := False;
 
+  if (VarType <> nil) and (VarType.BaseType in [ltAnsiString, ltWideString, ltUnicodeString, ltDynArray]) then
+    Exit(False);
+
   if (VarType = nil) or (VarType.BaseType in ComplexTypes) or VarType.NeedFinalization then
     Exit(True);
 

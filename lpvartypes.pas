@@ -165,6 +165,8 @@ type
     procedure setStack(Stack: TLapeVarStack); virtual;
     function getOffset: Integer; virtual;
   public
+    IncOffset: Integer;
+
     constructor Create(AVarType: TLapeType; AStack: TLapeVarStack; AName: lpString = ''; ADocPos: PDocPos = nil; AList: TLapeDeclarationList = nil); reintroduce; virtual;
     destructor Destroy; override;
 
@@ -387,6 +389,7 @@ type
     IsOperator: Boolean;
     HintDirectives: ELapeHintDirectives;
     DeprecatedHint: lpString;
+    IsInline: Boolean;
 
     constructor Create(ACompiler: TLapeCompilerBase; AParams: TLapeParameterList; ARes: TLapeType = nil; AName: lpString = ''; ADocPos: PDocPos = nil); reintroduce; overload; virtual;
     constructor Create(ACompiler: TLapeCompilerBase; AParams: array of TLapeType; AParTypes: array of ELapeParameterType; AParDefaults: array of TLapeGlobalVar; ARes: TLapeType = nil; AName: lpString = ''; ADocPos: PDocPos = nil); reintroduce; overload; virtual;
@@ -711,7 +714,7 @@ type
 
     procedure Hint(Msg: lpString; Args: array of const; ADocPos: TDocPos);
 
-    property StackInfo: TLapeStackInfo read FStackInfo;
+    property StackInfo: TLapeStackInfo read FStackInfo write FStackInfo;
     property BaseTypes: TLapeBaseTypes read FBaseTypes;
 
     property GlobalDeclarations: TLapeDeclarationList read FGlobalDeclarations;
@@ -1208,7 +1211,7 @@ function TLapeStackVar.getOffset: Integer;
 var
   i: Integer;
 begin
-  Result := 0;
+  Result := IncOffset;
   if (FStack = nil) then
     Exit;
   for i := 0 to FStack.Count - 1 do

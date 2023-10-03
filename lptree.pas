@@ -183,6 +183,17 @@ type
     property Params: TLapeExpressionList read FParams;
   end;
 
+  TLapeTree_InlineInvoke = class(TLapeTree_Invoke)
+  protected
+    FStatements: TLapeTree_Base;
+    FStackInfo: TLapeStackInfo;
+  public
+    theVarOffset: Integer;
+
+    constructor Create(StackInfo: TLapeStackInfo; Statements: TLapeTree_Base; ACompiler: TLapeCompilerBase); reintroduce;
+    function Compile(var Offset: Integer): TResVar; override;
+  end;
+
   TLapeTree_InternalMethodClass = class of TLapeTree_InternalMethod;
   TLapeTree_InternalMethod = class(TLapeTree_Invoke)
   protected
@@ -2448,6 +2459,33 @@ begin
     if (TempSelfVar.VarPos.MemPos <> NullResVar.VarPos.MemPos) then
       TempSelfVar.Spill(1);
   end;
+end;
+
+constructor TLapeTree_InlineInvoke.Create(StackInfo: TLapeStackInfo; Statements: TLapeTree_Base; ACompiler: TLapeCompilerBase);
+begin
+  inherited Create(ACompiler);
+
+  FParams := TLapeExpressionList.Create(nil, dupAccept, False);
+  FStatements := Statements;
+  FStackInfo := StackInfo;
+end;
+
+function TLapeTree_InlineInvoke.Compile(var Offset: Integer): TResVar;
+var
+  i:Integer;
+  tmpVar: TResVar;
+begin
+  for i:=0 to FStackInfo.VarCount-1 do
+    FStackInfo.Vars[i].IncOffset := theVarOffset;
+
+  tmpVar := NullResVar;
+  for i:=0 to FParams.Count-1 do
+    FStackInfo.Vars[i].VarType.Eval(op_Assign, tmpVar, _ResVar.New(FStackInfo.Vars[i]), FParams[I].Compile(Offset), [lefAssigning], Offset);
+
+  Result := FStatements.Compile(Offset);
+
+  for i:=0 to FStackInfo.VarCount-1 do
+    FStackInfo.Vars[i].IncOffset := 0;
 end;
 
 constructor TLapeTree_InternalMethod.Create(ACompiler: TLapeCompilerBase; ADocPos: PDocPos = nil);

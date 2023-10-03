@@ -143,6 +143,8 @@ type
     function Expect(Token: EParserToken; NextBefore: Boolean = True; NextAfter: Boolean = False): EParserToken; overload; virtual;
     function Expect(Tokens: EParserTokenSet; NextBefore: Boolean = True; NextAfter: Boolean = False): EParserToken; overload; virtual;
 
+    function getMethodInTree(Method: TLapeType_Method): TLapeTree_Method;
+
     procedure ParseExpressionEnd(Token: EParserToken; NextBefore: Boolean = False; NextAfter: Boolean = True); overload; virtual;
     procedure ParseExpressionEnd(Tokens: EParserTokenSet = ParserToken_ExpressionEnd; NextBefore: Boolean = False; NextAfter: Boolean = True); overload; virtual;
     function ParseIdentifierList(FirstNext: Boolean = False): TStringArray; virtual;
@@ -1671,6 +1673,20 @@ begin
     Next();
 end;
 
+function TLapeCompiler.getMethodInTree(Method: TLapeType_Method): TLapeTree_Method;
+var
+  i: Integer;
+begin
+  for i := 0 to FDelayedTree.Statements.Count - 1 do
+    if (FDelayedTree.Statements[i] is TLapeTree_Method) and (TLapeTree_Method(FDelayedTree.Statements[I]).Method.VarType = Method) then
+     begin
+       Result := TLapeTree_Method(FDelayedTree.Statements[i]);
+       Exit;
+     end;
+
+  Result := nil;
+end;
+
 procedure TLapeCompiler.ParseExpressionEnd(Token: EParserToken; NextBefore: Boolean = False; NextAfter: Boolean = True);
 begin
   if (not (lcoLooseSemicolon in FOptions)) then
@@ -2091,7 +2107,7 @@ begin
     ResetStack := False;
 
   try
-    isNext([tk_kw_UnImplemented, tk_kw_Experimental, tk_kw_Deprecated, tk_kw_External, tk_kw_Forward, tk_kw_Overload, tk_kw_Override, tk_kw_Static]);
+    isNext([tk_kw_Inline, tk_kw_UnImplemented, tk_kw_Experimental, tk_kw_Deprecated, tk_kw_External, tk_kw_Forward, tk_kw_Overload, tk_kw_Override, tk_kw_Static]);
     OldDeclaration := getDeclarationNoWith(FuncName, FStackInfo.Owner);
     LocalDecl := (OldDeclaration <> nil) and hasDeclaration(OldDeclaration, FStackInfo.Owner, True, False);
 
@@ -2106,7 +2122,7 @@ begin
         RemoveSelfVar();
         FuncHeader := TLapeType_Method(addManagedType(TLapeType_Method.Create(FuncHeader)));
       end;
-      isNext([tk_kw_UnImplemented, tk_kw_Experimental, tk_kw_Deprecated, tk_kw_External, tk_kw_Forward, tk_kw_Overload, tk_kw_Override]);
+      isNext([tk_kw_Inline, tk_kw_UnImplemented, tk_kw_Experimental, tk_kw_Deprecated, tk_kw_External, tk_kw_Forward, tk_kw_Overload, tk_kw_Override]);
     end
     else if (not isExternal) and (not MethodOfObject(FuncHeader)) then
       FuncHeader := InheritMethodStack(FuncHeader, FStackInfo.Owner);
@@ -2161,7 +2177,7 @@ begin
           LapeException(lpString(E.Message), Tokenizer.DocPos);
         end;
 
-        isNext([tk_kw_UnImplemented, tk_kw_Experimental, tk_kw_Deprecated, tk_kw_External, tk_kw_Forward]);
+        isNext([tk_kw_Inline, tk_kw_UnImplemented, tk_kw_Experimental, tk_kw_Deprecated, tk_kw_External, tk_kw_Forward]);
       end
       else if (Tokenizer.Tok = tk_kw_Override) then
       begin
@@ -2283,6 +2299,13 @@ begin
         Result.FreeStackInfo := False;
         FreeAndNil(Result);
         Exit;
+      end;
+
+      if (Tokenizer.Tok = tk_kw_Inline) then
+      begin
+        Next();
+        Assert(Result.Method.VarType is TLapeType_Method);
+        TLapeType_Method(Result.Method.VarType).IsInline := True;
       end;
 
       while (Tokenizer.Tok in [tk_kw_Deprecated, tk_kw_Experimental, tk_kw_UnImplemented]) do
@@ -3211,6 +3234,8 @@ var
 
 var
   Signed: Boolean;
+  i: Integer;
+  treeMethod: TLapeTree_Method;
 begin
   Result := nil;
   Method := nil;
@@ -3317,9 +3342,28 @@ begin
                 if (Expr <> VarStack.Pop()) and (Expr is TLapeTree_InternalMethod) then
                   Method := TLapeTree_Invoke(Expr)
                 else
-                  Method := TLapeTree_Invoke.Create(Expr, Self, getPDocPos());
+                begin
+                  if (Expr.resType() is TLapeType_Method) and TLapeType_Method(Expr.resType()).IsInline then
+                  begin
+                    treeMethod := getMethodInTree(TLapeType_Method(Expr.resType()));
+                    Assert(treeMethod <> nil);
+
+                    Method := TLapeTree_InlineInvoke.Create(
+                      treeMethod.StackInfo, treeMethod.Statements, Self
+                    );
+
+                   if (FStackInfo.VarCount > 0) then
+                     TLapeTree_InlineInvoke(Method).theVarOffset := FStackInfo.Vars[FStackInfo.VarCount-1].Offset + FStackInfo.Vars[FStackInfo.VarCount-1].Size;
+                   for i:=0 to treeMethod.StackInfo.Count-1 do
+                     FStackInfo.addVar(treeMethod.StackInfo[i].VarType);
+                  end
+                  else
+                    Method := TLapeTree_Invoke.Create(Expr, Self, getPDocPos());
+                end;
               end;
-              if (Next() <> tk_sym_ParenthesisClose) then
+
+
+              if (Method <> nil) and (Next() <> tk_sym_ParenthesisClose) then
               begin
                 Method.addParam(EnsureExpression(ParseExpression([tk_sym_ParenthesisClose, tk_sym_Comma], False, True, Method is TLapeTree_InternalMethod)));
                 while True do

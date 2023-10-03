@@ -31,7 +31,6 @@ type
     tk_kw_Array,
     tk_kw_Begin,
     tk_kw_Case,
-    tk_kw_Class,
     tk_kw_Const,
     tk_kw_ConstRef,
     tk_kw_Deprecated,
@@ -48,6 +47,7 @@ type
     tk_kw_Forward,
     tk_kw_Function,
     tk_kw_If,
+    tk_kw_Inline,
     {$IFDEF Lape_PascalLabels}tk_kw_Label,{$ENDIF}
     tk_kw_Of,
     tk_kw_Object,
@@ -271,7 +271,6 @@ const
       (Keyword: 'ARRAY';         Token: tk_kw_Array),
       (Keyword: 'BEGIN';         Token: tk_kw_Begin),
       (Keyword: 'CASE';          Token: tk_kw_Case),
-      (Keyword: 'CLASS';         Token: tk_kw_Class),
       (Keyword: 'CONST';         Token: tk_kw_Const),
       (Keyword: 'CONSTREF';      Token: tk_kw_ConstRef),
       (Keyword: 'DEPRECATED';    Token: tk_kw_Deprecated),
@@ -288,6 +287,7 @@ const
       (Keyword: 'FORWARD';       Token: tk_kw_Forward),
       (Keyword: 'FUNCTION';      Token: tk_kw_Function),
       (Keyword: 'IF';            Token: tk_kw_If),
+      (Keyword: 'INLINE';        Token: tk_kw_Inline),
       {$IFDEF Lape_PascalLabels}
       (Keyword: 'LABEL';         Token: tk_kw_Label),
       {$ENDIF}

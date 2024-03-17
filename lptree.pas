@@ -2956,7 +2956,8 @@ begin
       LapeException(lpString(E.Message), DocPos);
     end;
   finally
-    LeftVar.Spill(1);
+    if (not (OperatorType in AssignOperators)) then
+      LeftVar.Spill(1);
     RightVar.Spill(1);
   end;
 end;

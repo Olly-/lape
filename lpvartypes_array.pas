@@ -771,7 +771,7 @@ begin
       Right := TLapeTree_Integer.Create(1, Left);
       with TLapeTree_Operator(Left) do
       begin
-        Left := TLapeTree_ResVar.Create(IndexVar.IncLock(2), FCompiler, Pos);
+        Left := TLapeTree_ResVar.Create(IndexVar.IncLock(), FCompiler, Pos);
         Right := TLapeTree_InternalMethod_Length.Create(Left);
         TLapeTree_InternalMethod_Length(Right).addParam(TLapeTree_ResVar.Create(Result.IncLock(), Left));
       end;

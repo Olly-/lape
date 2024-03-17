@@ -4391,7 +4391,7 @@ begin
       CompilerOptions := CompilerOptions - [lcoRangeCheck];
       Left := TLapeTree_ResVar.Create(Container.IncLock(), FLimit);
       Right := TLapeTree_ResVar.Create(
-        TLapeTree_Operator(FCondition).Left.Compile(Offset).IncLock(2), FCondition
+        TLapeTree_Operator(FCondition).Left.Compile(Offset).IncLock(), FCondition
       );
     end;
     Compile(Offset);

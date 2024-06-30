@@ -40,6 +40,84 @@ uses
 
 {$R *.lfm}
 
+var
+  Compiler: TLapeCompiler;
+
+procedure _LapeTestSort(const Params: PParamArray); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+var
+  Stack, VarStack: TByteArray;
+  TryStack: TTryStack;
+  CallStack: TCallStack;
+  VarStackStack: TVarStackStack;
+  yes: TInitBool = bTrue;
+
+  function CallCompareMethodFast(emitter: TLapeCodeEmitter; jmp: TCodePos; left, right: Pointer): Integer;
+  var
+    MyVarStack: array[0..(SizeOf(Pointer)*3)-1] of Byte;
+  begin
+    PPointer(@MyVarStack[0])^ := left;
+    PPointer(@MyVarStack[SizeOf(Pointer)])^ := right;
+    PPointer(@MyVarStack[(SizeOf(Pointer)*2)])^ := @Result;
+
+    UnsafeRunCode(Emitter, yes, MyVarStack, jmp, Stack, VarStack, VarStackStack, TryStack, CallStack);
+  end;
+
+const
+  ShellSortGaps: TIntegerArray = (
+    835387, 392925, 184011, 85764, 39744, 18298, 8359,
+    3785, 1695, 701, 301, 132, 57, 23, 10, 4, 1
+  );
+type
+  TIntArr = array of Int32;
+  PIntArr = ^TIntArr;
+var
+  jmp: Integer;
+  arr: TIntArr;
+var
+  Gap, Hi, i, j: SizeInt;
+  Item, Src: Pointer;
+  ElSize: Integer;
+  Len: Integer;
+  p: PByte;
+begin
+  SetLength(Stack, 16);
+  SetLength(VarStack, 16);
+  SetLength(VarStackStack, 8);
+  SetLength(TryStack, 8);
+  SetLength(CallStack, 4);
+
+  arr := PIntArr(Params^[0])^;
+  jmp := PInteger(Params^[1])^;
+
+  Len := Length(Arr);
+  ElSize := SizeOf(Int32);
+  Item := GetMem(ElSize);
+  Hi := Len - 1;
+  p := @arr[0];
+
+  for Gap in ShellSortGaps do
+    for i := Gap to Hi do
+    begin
+      Move(p[i * ElSize], Item^, ElSize);
+
+      j := i;
+      while (j >= Gap) do
+      begin
+        Src := @p[(j - Gap) * ElSize];
+        if CallCompareMethodFast(Compiler.Emitter, jmp, Src, Item) <= 0 then
+          Break;
+        //if (Compare(Src^, Item^) <= 0) then
+        //  Break;
+
+        Move(Src^, p[j * ElSize], ElSize);
+        Move(Item^, Src^, ElSize);
+        j := j - Gap;
+      end;
+    end;
+
+  FreeMem(Item);
+end;
+
 function HighResolutionTime: Double;
 {$IFDEF WINDOWS}
 var
@@ -75,7 +153,6 @@ procedure Compile(Run, Disassemble: Boolean);
 var
   t: Double;
   Parser: TLapeTokenizerBase;
-  Compiler: TLapeCompiler;
 begin
   Parser := nil;
   Compiler := nil;
@@ -90,6 +167,8 @@ begin
 
     Compiler.addGlobalMethod('procedure _Write(s: string); override;', @MyWrite, Form1);
     Compiler.addGlobalMethod('procedure _WriteLn; override;', @MyWriteLn, Form1);
+
+    Compiler.addGlobalFunc('procedure TestSort(arr: TIntegerArray; func: function(a,b: Pointer): Integer);', @_LapeTestSort);
 
     try
       t := HighResolutionTime();

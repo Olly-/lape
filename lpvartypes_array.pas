@@ -394,6 +394,32 @@ begin
       LapeExceptionFmt(lpeIndexOutOfRangeHigh, [idx, Hi.AsInteger]);
 end;
 
+procedure lpeDynArrayRangeCheck_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+var
+  Index: Int64;
+begin
+  Index := PInt64(Right)^;
+  if (PPointer(Left)^ <> nil) then
+  begin
+    if (Index < 0) or (Index > PSizeInt(PPointer(Left)^)[-1]) then
+      LapeExceptionFmt(lpeIndexOutOfRange, [Index, 0, PSizeInt(PPointer(Left)^)[-1]]);
+  end else
+    LapeExceptionFmt(lpeIndexOutOfRange, [Index, 0, 0]);
+end;
+
+procedure lpeDynArrayRangeCheck_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+var
+  Index: Int32;
+begin
+  Index := PInt32(Right)^;
+  if (PPointer(Left)^ <> nil) then
+  begin
+    if (Index < 0) or (Index > PSizeInt(PPointer(Left)^)[-1]) then
+      LapeExceptionFmt(lpeIndexOutOfRange, [Index, 0, PSizeInt(PPointer(Left)^)[-1]]);
+  end else
+    LapeExceptionFmt(lpeIndexOutOfRange, [Index, 0, 0]);
+end;
+
 procedure TLapeType_DynArray.RangeCheck(var AVar, AIndex: TResVar; Flags: ELapeEvalFlags; var Offset: Integer; Pos: PDocPos = nil);
 var
   Idx: SizeInt;
@@ -451,6 +477,22 @@ begin
       FCompiler.Emitter._PopStackToVar(AIndex.VarType.Size, AIndex.VarPos.StackVar.Offset, Offset, @_DocPos);
     end;
 
+    {$IFDEF OLLYYYY}
+    if (AIndex.VarType.BaseIntType = ltInt64) then
+      FCompiler.Emitter._Eval(@lpeDynArrayRangeCheck_WithInt64, AVar, AVar, AIndex, Offset, Pos)
+    else
+    if (AIndex.VarType.BaseIntType = ltInt32) then
+      FCompiler.Emitter._Eval(@lpeDynArrayRangeCheck_WithInt32, AVar, AVar, AIndex, Offset, Pos)
+    else
+      WriteLn('NOT SUPPORTED RANGE CHECK: ', AIndex.VarType.BaseIntType);
+    {$ELSE}
+    AIndex.VarType := FCompiler.getBaseType(AIndex.VarType.BaseIntType);
+    if (AIndex.VarPos.MemPos = mpStack) then
+    begin
+      AIndex := _ResVar.New(FCompiler.getTempVar(AIndex.VarType));
+      FCompiler.Emitter._PopStackToVar(AIndex.VarType.Size, AIndex.VarPos.StackVar.Offset, Offset, @_DocPos);
+    end;
+
     TempVar := NullResVar;
 
     DestVar := NullResVar;
@@ -468,6 +510,7 @@ begin
     DestVar.VarType.Eval(op_Assign, TempVar, DestVar, AIndex, [], Offset, @_DocPos);
 
     FCompiler.Emitter._DynArrayRangeCheck(Offset, @_DocPos);
+    {$ENDIF}
   end else
   begin
     AIndex.VarType := FCompiler.getBaseType(AIndex.VarType.BaseIntType);
@@ -586,6 +629,221 @@ begin
     Result := inherited;
 end;
 
+procedure lpePointerIndexBy1_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 1);
+end;
+
+procedure lpePointerIndexBy1_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 1);
+end;
+
+procedure lpePointerIndexBy1_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 1);
+end;
+
+procedure lpePointerIndexBy1_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 1);
+end;
+
+procedure lpePointerIndexBy2_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 2);
+end;
+
+procedure lpePointerIndexBy2_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 2);
+end;
+
+procedure lpePointerIndexBy2_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 2);
+end;
+
+procedure lpePointerIndexBy2_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 2);
+end;
+
+procedure lpePointerIndexBy4_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 4);
+end;
+
+procedure lpePointerIndexBy4_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 4);
+end;
+
+procedure lpePointerIndexBy4_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 4);
+end;
+
+procedure lpePointerIndexBy4_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 4);
+end;
+
+procedure lpePointerIndexBy8_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 8);
+end;
+
+procedure lpePointerIndexBy8_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 8);
+end;
+
+procedure lpePointerIndexBy8_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 8);
+end;
+
+procedure lpePointerIndexBy8_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 8);
+end;
+
+procedure lpePointerIndexBy12_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 12);
+end;
+
+procedure lpePointerIndexBy12_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 12);
+end;
+
+procedure lpePointerIndexBy12_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 12);
+end;
+
+procedure lpePointerIndexBy12_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 12);
+end;
+
+procedure lpePointerIndexBy16_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 16);
+end;
+
+procedure lpePointerIndexBy16_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 16);
+end;
+
+procedure lpePointerIndexBy16_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 16);
+end;
+
+procedure lpePointerIndexBy16_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 16);
+end;
+
+procedure lpePointerIndexBy24_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 24);
+end;
+
+procedure lpePointerIndexBy24_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 24);
+end;
+
+procedure lpePointerIndexBy24_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 24);
+end;
+
+procedure lpePointerIndexBy24_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 24);
+end;
+
+procedure lpePointerIndexBy32_WithInt8(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt8(Right)^ * 32);
+end;
+
+procedure lpePointerIndexBy32_WithInt16(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt16(Right)^ * 32);
+end;
+
+procedure lpePointerIndexBy32_WithInt32(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt32(Right)^ * 32);
+end;
+
+procedure lpePointerIndexBy32_WithInt64(const Dest, Left, Right: Pointer); {$IFDEF Lape_CDECL}cdecl;{$ENDIF}
+begin
+  PPointer(Dest)^ := PByte(PPointer(Left)^) + (PInt64(Right)^ * 32);
+end;
+
+var
+  LapePointerIndexEvals: array[1..32] of array [1..8] of TLapeEvalProc;
+
+procedure BuildPointerEvals;
+begin
+  LapePointerIndexEvals[1, SizeOf(Int8)] := @lpePointerIndexBy1_WithInt8;
+  LapePointerIndexEvals[1, SizeOf(Int16)] := @lpePointerIndexBy1_WithInt16;
+  LapePointerIndexEvals[1, SizeOf(Int32)] := @lpePointerIndexBy1_WithInt32;
+  LapePointerIndexEvals[1, SizeOf(Int64)] := @lpePointerIndexBy1_WithInt64;
+
+  LapePointerIndexEvals[2, SizeOf(Int8)] := @lpePointerIndexBy2_WithInt8;
+  LapePointerIndexEvals[2, SizeOf(Int16)] := @lpePointerIndexBy2_WithInt16;
+  LapePointerIndexEvals[2, SizeOf(Int32)] := @lpePointerIndexBy2_WithInt32;
+  LapePointerIndexEvals[2, SizeOf(Int64)] := @lpePointerIndexBy2_WithInt64;
+
+  LapePointerIndexEvals[4, SizeOf(Int8)] := @lpePointerIndexBy4_WithInt8;
+  LapePointerIndexEvals[4, SizeOf(Int16)] := @lpePointerIndexBy4_WithInt16;
+  LapePointerIndexEvals[4, SizeOf(Int32)] := @lpePointerIndexBy4_WithInt32;
+  LapePointerIndexEvals[4, SizeOf(Int64)] := @lpePointerIndexBy4_WithInt64;
+
+  LapePointerIndexEvals[8, SizeOf(Int8)] := @lpePointerIndexBy8_WithInt8;
+  LapePointerIndexEvals[8, SizeOf(Int16)] := @lpePointerIndexBy8_WithInt16;
+  LapePointerIndexEvals[8, SizeOf(Int32)] := @lpePointerIndexBy8_WithInt32;
+  LapePointerIndexEvals[8, SizeOf(Int64)] := @lpePointerIndexBy8_WithInt64;
+
+  LapePointerIndexEvals[12, SizeOf(Int8)] := @lpePointerIndexBy12_WithInt8;
+  LapePointerIndexEvals[12, SizeOf(Int16)] := @lpePointerIndexBy12_WithInt16;
+  LapePointerIndexEvals[12, SizeOf(Int32)] := @lpePointerIndexBy12_WithInt32;
+  LapePointerIndexEvals[12, SizeOf(Int64)] := @lpePointerIndexBy12_WithInt64;
+
+  LapePointerIndexEvals[16, SizeOf(Int8)] := @lpePointerIndexBy16_WithInt8;
+  LapePointerIndexEvals[16, SizeOf(Int16)] := @lpePointerIndexBy16_WithInt16;
+  LapePointerIndexEvals[16, SizeOf(Int32)] := @lpePointerIndexBy16_WithInt32;
+  LapePointerIndexEvals[16, SizeOf(Int64)] := @lpePointerIndexBy16_WithInt64;
+
+  LapePointerIndexEvals[24, SizeOf(Int8)] := @lpePointerIndexBy24_WithInt8;
+  LapePointerIndexEvals[24, SizeOf(Int16)] := @lpePointerIndexBy24_WithInt16;
+  LapePointerIndexEvals[24, SizeOf(Int32)] := @lpePointerIndexBy24_WithInt32;
+  LapePointerIndexEvals[24, SizeOf(Int64)] := @lpePointerIndexBy24_WithInt64;
+
+  LapePointerIndexEvals[32, SizeOf(Int8)] := @lpePointerIndexBy32_WithInt8;
+  LapePointerIndexEvals[32, SizeOf(Int16)] := @lpePointerIndexBy32_WithInt16;
+  LapePointerIndexEvals[32, SizeOf(Int32)] := @lpePointerIndexBy32_WithInt32;
+  LapePointerIndexEvals[32, SizeOf(Int64)] := @lpePointerIndexBy32_WithInt64;
+end;
+
+function getPointerIndexEvalProc(typSize, indexSize: Integer): TLapeEvalProc;
+begin
+  Result := LapePointerIndexEvals[typSize, indexSize];
+  if (Result = nil) then
+    LapeException(lpeImpossible);
+end;
+
+{$DEFINE OLLY}
+
 function TLapeType_DynArray.Eval(Op: EOperator; var Dest: TResVar; ALeft, ARight: TResVar; Flags: ELapeEvalFlags; var Offset: Integer; Pos: PDocPos = nil): TResVar;
 var
   tmpType: ELapeBaseType;
@@ -615,24 +873,48 @@ begin
       begin
         if (Dest.VarPos.MemPos = mpStack) then
           Dest := NullResVar;
-        Result := inherited Eval(Op, Dest, ALeft, ARight, Flags, Offset, Pos);
+
+        {$IFDEF OLLY}
+        if (PType.Size in [1,2,4,8,12,16,24,32]) and (ARight.VarType.BaseIntType in [ltInt8, ltInt16, ltInt32, ltInt64]) then
+        begin
+          Result := NullResVar;
+          Result.VarType := FCompiler.getPointerType(PType, PConst);
+          FCompiler.getDestVar(Dest, Result, op_Index);
+          FCompiler.Emitter._Eval(getPointerIndexEvalProc(PType.Size, ARight.VarType.Size), Result, ALeft, ARight, Offset, Pos);
+        end else
+        {$ENDIF}
+          Result := inherited Eval(Op, Dest, ALeft, ARight, Flags, Offset, Pos);
+
         Result.VarPos.isPointer := True;
         Result.VarType := FPType;
       end
       else
       begin
-        IndexVar := inherited Eval(Op, IndexVar, ALeft, ARight, Flags, Offset, Pos);
-        Result := //Result := Pointer[Index]^
-          Eval(
-            op_Deref,
-            Dest,
-            IndexVar,
-            NullResVar,
-            [],
-            Offset,
-            Pos
-          );
-        IndexVar.Spill(1);
+        {$IFDEF OLLY}
+        if (PType.Size in [1,2,4,8,12,16,24,32]) and (ARight.VarType.BaseIntType in [ltInt8, ltInt16, ltInt32, ltInt64]) then
+        begin
+          Result := NullResVar;
+          Result.VarType := FPType;
+          FCompiler.getDestVar(Dest, Result, op_Deref);
+          FCompiler.Emitter._Eval(getPointerIndexEvalProc(PType.Size, ARight.VarType.Size), Result, ALeft, ARight, Offset, Pos);
+          Result.VarPos.isPointer := (Result.VarPos.MemPos = mpVar);
+        end else
+        {$ENDIF}
+        begin
+          IndexVar := inherited Eval(Op, IndexVar, ALeft, ARight, Flags, Offset, Pos);
+
+          Result := //Result := Pointer[Index]^
+            Eval(
+              op_Deref,
+              Dest,
+              IndexVar,
+              NullResVar,
+              [],
+              Offset,
+              Pos
+            );
+          IndexVar.Spill(1);
+        end;
       end;
     finally
       FBaseType := tmpType;
@@ -1567,6 +1849,9 @@ begin
   else
     Result := inherited;
 end;
+
+initialization
+  BuildPointerEvals();
 
 end.
 
